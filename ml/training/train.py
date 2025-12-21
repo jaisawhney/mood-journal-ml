@@ -9,7 +9,7 @@ from transformers import (
     Trainer,
     TrainingArguments,
 )
-from sklearn.metrics import f1_score
+from sklearn.metrics import f1_score, accuracy_score
 
 from ml.config import load_config
 
@@ -27,6 +27,7 @@ def compute_metrics(eval_pred):
     
     return {
         "macro_f1": f1_score(labels, predictions, average="macro"),
+        "accuracy": accuracy_score(labels, predictions),
     }
 
 def main():
