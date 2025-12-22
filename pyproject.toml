@@ -1,0 +1,28 @@
+[build-system]
+requires = ["setuptools>=68.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "mood-tracker-ml"
+version = "1.0.0"
+description = "Emotion classification for a mood tracking web app"
+requires-python = ">=3.10"
+dependencies = ["pyyaml==6.0.3", "python-dotenv==1.2.1", "transformers>=4.57.3"]
+
+[project.optional-dependencies]
+api = ["fastapi==0.127.0", "uvicorn==0.40.0"]
+ml = ["datasets==4.4.2", "scikit-learn==1.8.0"]
+dev = ["pytest==9.0.2", "pytest-asyncio>=0.21"]
+
+[tool.setuptools]
+packages = ["apps", "ml"]
+
+[tool.black]
+line-length = 100
+
+[tool.ruff]
+line-length = 100
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+asyncio_mode = "auto"

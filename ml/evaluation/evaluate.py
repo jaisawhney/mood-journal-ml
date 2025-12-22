@@ -11,13 +11,14 @@ from transformers import (
     TrainingArguments,
 )
 from sklearn.metrics import (
-    f1_score, 
-    accuracy_score, 
+    f1_score,
+    accuracy_score,
     precision_recall_fscore_support,
     confusion_matrix,
 )
 
 from ml.config import load_config
+
 
 def tokenize(batch, tokenizer, max_length):
     return tokenizer(
@@ -26,6 +27,7 @@ def tokenize(batch, tokenizer, max_length):
         padding=False,
         max_length=max_length,
     )
+
 
 def save_metrics(cfg, metrics, output_path):
     metrics_out = {
@@ -41,28 +43,29 @@ def save_metrics(cfg, metrics, output_path):
         json.dump(metrics_out, f, indent=2)
 
     print(f"Metrics saved to {out_path}")
-    
+
+
 def compute_metrics_report(predictions, labels, label_names=None):
     """Compute per-class metrics and confusion matrix"""
     # Per-class metrics
     precision, recall, f1, support = precision_recall_fscore_support(
         labels, predictions, average=None, zero_division=0
     )
-    
+
     # Overall metrics
     accuracy = accuracy_score(labels, predictions)
     macro_f1 = f1_score(labels, predictions, average="macro")
     micro_f1 = f1_score(labels, predictions, average="micro")
     weighted_f1 = f1_score(labels, predictions, average="weighted")
-    
+
     # Confusion matrix
     num_labels = len(label_names)
     cm = confusion_matrix(labels, predictions, labels=list(range(num_labels)))
-        
+
     # Classification report
     if label_names is None:
         label_names = [f"class_{i}" for i in range(len(precision))]
-    
+
     return {
         "accuracy": accuracy,
         "macro_f1": macro_f1,
@@ -76,6 +79,7 @@ def compute_metrics_report(predictions, labels, label_names=None):
         "label_names": label_names,
     }
 
+
 def main():
     try:
         # Load configuration
@@ -85,14 +89,14 @@ def main():
 
         # Load Dataset
         dataset = load_dataset("dair-ai/emotion")
-        
+
         # Get label names from dataset
         label_names = dataset["train"].features["label"].names
         print(f"Label names: {label_names}")
-                
+
         # Initialize tokenizer
         tokenizer = AutoTokenizer.from_pretrained(model_name, use_fast=True)
-        
+
         # Tokenize test set
         num_proc = max(1, (os.cpu_count() or 1) // 2)
         tokenized_test = dataset["test"].map(
@@ -108,7 +112,7 @@ def main():
             per_device_eval_batch_size=int(cfg["evaluation"]["eval_batch_size"]),
             report_to="none",
         )
-        
+
         # Load the trained model
         model = AutoModelForSequenceClassification.from_pretrained(cfg["paths"]["output_dir"])
         model.eval()
@@ -123,20 +127,21 @@ def main():
         # Run evaluation and get predictions
         print(f"\nEvaluating model from: {cfg['paths']['output_dir']}")
         predictions_output = trainer.predict(tokenized_test)
-        
+
         # Extract predictions and labels
         logits = predictions_output.predictions
         labels = predictions_output.label_ids
         predictions = logits.argmax(axis=-1)
-        
+
         # Compute and display metrics
         metrics = compute_metrics_report(predictions, labels, label_names)
-        
+
         # Save metrics
         save_metrics(cfg, metrics, cfg["paths"]["output_dir"])
     except (OSError, ValueError, RuntimeError) as e:
         print(f"Error during evaluation: {e}")
         raise
+
 
 if __name__ == "__main__":
     main()
