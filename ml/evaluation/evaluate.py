@@ -1,7 +1,6 @@
 import datetime
 import json
 import os
-import torch
 
 from datasets import load_dataset
 from transformers import (
@@ -11,7 +10,12 @@ from transformers import (
     Trainer,
     TrainingArguments,
 )
-from sklearn.metrics import f1_score, accuracy_score
+from sklearn.metrics import (
+    f1_score, 
+    accuracy_score, 
+    precision_recall_fscore_support,
+    confusion_matrix,
+)
 
 from ml.config import load_config
 
@@ -22,15 +26,6 @@ def tokenize(batch, tokenizer, max_length):
         padding=False,
         max_length=max_length,
     )
-
-def compute_metrics(eval_pred):
-    logits, labels = eval_pred
-    predictions = logits.argmax(axis=-1)
-    
-    return {
-        "macro_f1": f1_score(labels, predictions, average="macro"),
-        "accuracy": accuracy_score(labels, predictions),
-    }
 
 def save_metrics(cfg, metrics, output_path):
     metrics_out = {
@@ -45,6 +40,42 @@ def save_metrics(cfg, metrics, output_path):
     with open(out_path, "w") as f:
         json.dump(metrics_out, f, indent=2)
 
+    print(f"Metrics saved to {out_path}")
+    
+def compute_metrics_report(predictions, labels, label_names=None):
+    """Compute per-class metrics and confusion matrix"""
+    # Per-class metrics
+    precision, recall, f1, support = precision_recall_fscore_support(
+        labels, predictions, average=None, zero_division=0
+    )
+    
+    # Overall metrics
+    accuracy = accuracy_score(labels, predictions)
+    macro_f1 = f1_score(labels, predictions, average="macro")
+    micro_f1 = f1_score(labels, predictions, average="micro")
+    weighted_f1 = f1_score(labels, predictions, average="weighted")
+    
+    # Confusion matrix
+    num_labels = len(label_names)
+    cm = confusion_matrix(labels, predictions, labels=list(range(num_labels)))
+        
+    # Classification report
+    if label_names is None:
+        label_names = [f"class_{i}" for i in range(len(precision))]
+    
+    return {
+        "accuracy": accuracy,
+        "macro_f1": macro_f1,
+        "micro_f1": micro_f1,
+        "weighted_f1": weighted_f1,
+        "per_class_precision": precision.tolist(),
+        "per_class_recall": recall.tolist(),
+        "per_class_f1": f1.tolist(),
+        "per_class_support": support.tolist(),
+        "confusion_matrix": cm.tolist(),
+        "label_names": label_names,
+    }
+
 def main():
     try:
         # Load configuration
@@ -54,6 +85,10 @@ def main():
 
         # Load Dataset
         dataset = load_dataset("dair-ai/emotion")
+        
+        # Get label names from dataset
+        label_names = dataset["train"].features["label"].names
+        print(f"Label names: {label_names}")
                 
         # Initialize tokenizer
         tokenizer = AutoTokenizer.from_pretrained(model_name, use_fast=True)
@@ -72,7 +107,6 @@ def main():
         args = TrainingArguments(
             per_device_eval_batch_size=int(cfg["evaluation"]["eval_batch_size"]),
             report_to="none",
-            fp16=torch.cuda.is_available(),
         )
         
         # Load the trained model
@@ -84,17 +118,22 @@ def main():
             args=args,
             eval_dataset=tokenized_test,
             data_collator=DataCollatorWithPadding(tokenizer),
-            compute_metrics=compute_metrics,
         )
 
-        # Run evaluation
-        metrics = trainer.evaluate()
-        for k, v in metrics.items():
-            print(f"{k}: {v:.4f}")
+        # Run evaluation and get predictions
+        print(f"\nEvaluating model from: {cfg['paths']['output_dir']}")
+        predictions_output = trainer.predict(tokenized_test)
+        
+        # Extract predictions and labels
+        logits = predictions_output.predictions
+        labels = predictions_output.label_ids
+        predictions = logits.argmax(axis=-1)
+        
+        # Compute and display metrics
+        metrics = compute_metrics_report(predictions, labels, label_names)
         
         # Save metrics
         save_metrics(cfg, metrics, cfg["paths"]["output_dir"])
-
     except (OSError, ValueError, RuntimeError) as e:
         print(f"Error during evaluation: {e}")
         raise
