@@ -17,10 +17,7 @@ const bgSyncPlugin = new BackgroundSyncPlugin(QUEUE_NAME, {
 });
 
 registerRoute(
-    ({ url }) => {
-
-        return url.pathname === '/api/predict';
-    },
+    ({ url }) => url.pathname === '/api/predict',
     new NetworkOnly({ plugins: [bgSyncPlugin] }),
     'POST'
 );

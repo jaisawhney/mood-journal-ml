@@ -1,6 +1,6 @@
 import './App.css'
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom'
-import InsightsPage from './pages/InsightsPage'
+import InsightsPage from './pages/Home'
 import JournalPage from './pages/JournalPage'
 import HistoryPage from './pages/HistoryPage'
 import Nav from './components/navigation/Nav'
@@ -8,9 +8,9 @@ import Nav from './components/navigation/Nav'
 function App() {
   return (
     <Router>
-      <div className='w-screen min-h-screen bg-slate-50'>
+      <div className='w-screen min-h-screen bg-neutral-50 text-slate-800'>
         <Nav />
-        <main className='pb-16'>
+        <main className='pb-16 md:ml-56 md:pb-0'>
           <Routes>
             <Route path='/' element={<InsightsPage />} />
             <Route path='/journal' element={<JournalPage />} />
