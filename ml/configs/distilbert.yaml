@@ -1,5 +1,5 @@
 model:
-  name: distilbert-base-uncased
+  name: distilbert/distilbert-base-uncased
   max_length: 128
 
 paths:
@@ -7,10 +7,13 @@ paths:
   
 training:
   learning_rate: 2e-5
-  train_batch_size: 16
-  eval_batch_size: 16
-  num_epochs: 3
+  train_batch_size: 32
+  eval_batch_size: 32
+  num_epochs: 12
   weight_decay: 0.01
+  seed: 42
+  warmup_ratio: 0.1
+  label_smoothing_factor: 0.05
 
 evaluation:
-  eval_batch_size: 32
+  eval_batch_size: 128

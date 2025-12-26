@@ -1,9 +1,10 @@
 from contextlib import asynccontextmanager
 from typing import List
 from fastapi import FastAPI, HTTPException
+from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
-from ml.inference.emotion_classifier import EmotionClassifier
+from ml.inference.classifier import EmotionClassifier
 
 classifier: EmotionClassifier | None = None
 
@@ -25,27 +26,40 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
+# Add CORS middleware
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=[
+        "http://localhost:5173",
+        "http://localhost:3000",
+        "http://localhost",
+        "http://localhost:4173",
+    ],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
 
 class PredictionRequest(BaseModel):
     texts: List[str]
 
 
 class Prediction(BaseModel):
-    predicted: str
-    confidence: float
-    scores: dict[str, float]
+    primary: str
+    wheel: dict[str, float]
 
 
 class PredictionResponse(BaseModel):
     predictions: List[Prediction]
 
 
-@app.get("/health")
+@app.get("/api/health")
 def health():
     return {"status": "ok"}
 
 
-@app.post("/predict", response_model=PredictionResponse)
+@app.post("/api/predict", response_model=PredictionResponse)
 async def predict(request: PredictionRequest):
     if classifier is None:
         raise HTTPException(status_code=503, detail="Model not loaded")
@@ -53,9 +67,8 @@ async def predict(request: PredictionRequest):
         results = classifier.predict(request.texts)
         predictions = [
             Prediction(
-                predicted=res["predicted"],
-                confidence=res["confidence"],
-                scores=res["scores"],
+                primary=res["primary"],
+                wheel=res["wheel"],
             )
             for res in results
         ]
@@ -64,7 +77,7 @@ async def predict(request: PredictionRequest):
         raise HTTPException(status_code=500, detail=f"Prediction failed: {e}")
 
 
-@app.get("/labels")
+@app.get("/api/labels")
 async def get_labels():
     if classifier is None:
         raise HTTPException(status_code=503, detail="Model not loaded")

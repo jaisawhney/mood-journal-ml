@@ -2,13 +2,12 @@ import datetime
 import json
 import os
 
-from datasets import load_dataset
 from transformers import (
     AutoTokenizer,
     AutoModelForSequenceClassification,
-    DataCollatorWithPadding,
     Trainer,
     TrainingArguments,
+    DataCollatorWithPadding,
 )
 from sklearn.metrics import (
     f1_score,
@@ -18,15 +17,10 @@ from sklearn.metrics import (
 )
 
 from ml.config import load_config
-
-
-def tokenize(batch, tokenizer, max_length):
-    return tokenizer(
-        batch["text"],
-        truncation=True,
-        padding=False,
-        max_length=max_length,
-    )
+from ml.data import (
+    load_and_prepare_dataset,
+    tokenize,
+)
 
 
 def save_metrics(cfg, metrics, output_path):
@@ -46,7 +40,6 @@ def save_metrics(cfg, metrics, output_path):
 
 
 def compute_metrics_report(predictions, labels, label_names=None):
-    """Compute per-class metrics and confusion matrix"""
     # Per-class metrics
     precision, recall, f1, support = precision_recall_fscore_support(
         labels, predictions, average=None, zero_division=0
@@ -87,27 +80,25 @@ def main():
 
         model_name = cfg["model"]["name"]
 
-        # Load Dataset
-        dataset = load_dataset("dair-ai/emotion")
+        # Load and prepare dataset
+        dataset, label_names, _, _ = load_and_prepare_dataset()
 
-        # Get label names from dataset
-        label_names = dataset["train"].features["label"].names
-        print(f"Label names: {label_names}")
+        # Determine number of processes for dataset mapping
+        num_proc = max(1, (os.cpu_count() or 1) // 2)
 
         # Initialize tokenizer
         tokenizer = AutoTokenizer.from_pretrained(model_name, use_fast=True)
 
         # Tokenize test set
-        num_proc = max(1, (os.cpu_count() or 1) // 2)
         tokenized_test = dataset["test"].map(
             lambda x: tokenize(x, tokenizer, int(cfg["model"]["max_length"])),
             batched=True,
-            remove_columns=["text"],
+            remove_columns=["situation", "Unnamed: 0"],
             num_proc=num_proc,
         )
         tokenized_test.set_format("torch")
 
-        # Define Trainer for evaluation
+        # Define trainer for evaluation
         args = TrainingArguments(
             per_device_eval_batch_size=int(cfg["evaluation"]["eval_batch_size"]),
             report_to="none",
@@ -121,16 +112,17 @@ def main():
             model=model,
             args=args,
             eval_dataset=tokenized_test,
-            data_collator=DataCollatorWithPadding(tokenizer),
+            data_collator=DataCollatorWithPadding(tokenizer=tokenizer),
         )
 
         # Run evaluation and get predictions
-        print(f"\nEvaluating model from: {cfg['paths']['output_dir']}")
         predictions_output = trainer.predict(tokenized_test)
 
         # Extract predictions and labels
         logits = predictions_output.predictions
         labels = predictions_output.label_ids
+        if labels.ndim > 1:
+            labels = labels.argmax(axis=1)
         predictions = logits.argmax(axis=-1)
 
         # Compute and display metrics

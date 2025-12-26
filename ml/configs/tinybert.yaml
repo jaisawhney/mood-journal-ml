@@ -1,19 +1,19 @@
 model:
-  name: microsoft/MiniLM-L12-H384-uncased
-  max_length: 128
+  name: huawei-noah/TinyBERT_General_4L_312D
+  max_length: 32
 
 paths:
-  output_dir: ml/artifacts/minilm_v1
-  
+  output_dir: ml/artifacts/tinybert_v1
+
 training:
-  learning_rate: 2e-5
+  learning_rate: 5e-5
   train_batch_size: 32
   eval_batch_size: 32
   num_epochs: 12
   weight_decay: 0.01
   seed: 42
   warmup_ratio: 0.06
-  label_smoothing_factor: 0.05
+  label_smoothing_factor: 0.00
 
 evaluation:
   eval_batch_size: 128

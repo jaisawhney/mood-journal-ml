@@ -74,4 +74,4 @@ pytest
 
 ## References
 
-Dataset: `dair-ai/emotion` (Saravia et al., EMNLP 2018).
+Dataset: `empathetic-dialogues` (Rashkin et al., ACL 2019).
