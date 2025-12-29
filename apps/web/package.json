@@ -10,6 +10,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@huggingface/transformers": "^3.8.1",
     "@tailwindcss/vite": "^4.1.18",
     "axios": "^1.13.2",
     "classnames": "^2.5.1",
@@ -21,6 +22,7 @@
     "tailwindcss": "^4.1.18",
     "workbox-background-sync": "^7.4.0",
     "workbox-build": "^7.4.0",
+    "workbox-expiration": "^7.4.0",
     "workbox-routing": "^7.4.0",
     "workbox-strategies": "^7.4.0",
     "workbox-window": "^7.4.0"

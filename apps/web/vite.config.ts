@@ -30,6 +30,12 @@ export default defineConfig({
       registerType: 'autoUpdate',
       injectRegister: 'inline',
       includeAssets: ['vite.svg'],
+      injectManifest: {
+        globIgnores: [
+          '**/*.wasm',
+          '**/*.onnx',
+        ],
+      },
       manifest: {
         name: 'Mood Tracker',
         short_name: 'MoodTracker',

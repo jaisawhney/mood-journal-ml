@@ -1,22 +1,14 @@
-import { openDB, type DBSchema, type IDBPDatabase } from 'idb';
+import { openDB, type DBSchema, type IDBPDatabase } from "idb";
+import type { Emotion, JournalEntry, PlutchikResult } from "../types/types";
 
-export interface MoodEntry {
-    id?: number;
-    text: string;
-    emotion: string;
-    confidence: number;
-    scores: Record<string, number>;
-    timestamp: number;
-    analyzed: 0 | 1;
-}
 
 interface MoodTrackerDB extends DBSchema {
     entries: {
         key: number;
-        value: MoodEntry;
+        value: JournalEntry;
         indexes: {
-            'by-timestamp': number;
-            'by-analyzed': 0 | 1;
+            "by-timestamp": number;
+            "by-emotion": Emotion;
         };
     };
 }
@@ -26,12 +18,19 @@ let db: IDBPDatabase<MoodTrackerDB> | null = null;
 export const initDB = async (): Promise<IDBPDatabase<MoodTrackerDB>> => {
     if (db) return db;
 
-    db = await openDB<MoodTrackerDB>('mood-tracker', 1, {
+    db = await openDB<MoodTrackerDB>("mood-tracker", 2, {
         upgrade(database) {
-            if (!database.objectStoreNames.contains('entries')) {
-                const store = database.createObjectStore('entries', { keyPath: 'id', autoIncrement: true });
-                store.createIndex('by-analyzed', 'analyzed', { unique: false });
-                store.createIndex('by-timestamp', 'timestamp', { unique: false });
+            if (!database.objectStoreNames.contains("entries")) {
+                const store = database.createObjectStore("entries", {
+                    keyPath: "id",
+                    autoIncrement: true,
+                });
+
+                store.createIndex("by-timestamp", "timestamp");
+                store.createIndex(
+                    "by-emotion",
+                    "result.primary_emotion"
+                );
             }
         },
     });
@@ -39,35 +38,62 @@ export const initDB = async (): Promise<IDBPDatabase<MoodTrackerDB>> => {
     return db;
 };
 
-export const saveMoodEntry = async (entry: Omit<MoodEntry, 'id'>): Promise<number> => {
+export const saveJournalEntry = async (text: string, result: PlutchikResult): Promise<number> => {
     const database = await initDB();
-    return database.add('entries', entry);
-};
-
-export const getMoodEntries = async (): Promise<MoodEntry[]> => {
-    const database = await initDB();
-    return database.getAll('entries');
-};
-
-export async function getPendingMoodEntries() {
-    const database = await initDB();
-    return database.getAllFromIndex('entries', 'by-analyzed', 0);
+    const entry: JournalEntry = {
+        text,
+        emotion: result.primary_emotion,
+        result,
+        timestamp: Date.now(),
+    };
+    return database.add("entries", entry);
 }
 
-export const updateMoodEntry = async (id: number, updates: Partial<Omit<MoodEntry, 'id'>>): Promise<void> => {
+export const updateJournalEntry = async (id: number, text: string, result: PlutchikResult): Promise<void> => {
     const database = await initDB();
-    const entry = await database.get('entries', id);
-    if (entry) {
-        await database.put('entries', { ...entry, ...updates });
-    }
-};
+    const entry: JournalEntry = {
+        id,
+        text,
+        emotion: result.primary_emotion,
+        result,
+        timestamp: Date.now(),
+    };
+    await database.put("entries", entry);
+}
 
-export const deleteMoodEntry = async (id: number): Promise<void> => {
+export const updatePrimaryEmotion = async (id: number, emotion: Emotion): Promise<void> => {
     const database = await initDB();
-    await database.delete('entries', id);
-};
+    const entry = await database.get("entries", id);
+    if (!entry) throw new Error("Journal entry not found");
 
-export const clearAllEntries = async (): Promise<void> => {
+    entry.emotion = emotion;
+    await database.put("entries", entry);
+}
+
+export const getJournalEntries = async (): Promise<JournalEntry[]> => {
     const database = await initDB();
-    await database.clear('entries');
-};
+    return database.getAllFromIndex("entries", "by-timestamp");
+}
+
+export const getRecentJournalEntries = async (limit: number = 10): Promise<JournalEntry[]> => {
+    const database = await initDB();
+    const index = database.transaction("entries", "readonly").store.index("by-timestamp");
+
+    const all = await index.getAll();
+    return all.sort((a, b) => b.timestamp - a.timestamp).slice(0, limit);
+}
+
+export const getJournalEntriesByEmotion = async (emotion: Emotion): Promise<JournalEntry[]> => {
+    const database = await initDB();
+    return database.getAllFromIndex("entries", "by-emotion", emotion);
+}
+
+export const deleteJournalEntry = async (id: number): Promise<void> => {
+    const database = await initDB();
+    await database.delete("entries", id);
+}
+
+export const clearAllJournalEntries = async (): Promise<void> => {
+    const database = await initDB();
+    await database.clear("entries");
+}
