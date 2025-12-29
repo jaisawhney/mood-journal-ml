@@ -6,7 +6,7 @@ A full-stack emotion classification Progressive Web App (PWA) consisting of a RE
 
 - Emotion classification API: FastAPI inference for real-time predictions
 - Progressive Web App: Offline-capable frontend for mood journaling
-- Model fine-tuning based on the `dair-ai/emotion` dataset
+- Model fine-tuning based on the `empathetic-dialogues` dataset
 - Full training, evaluation, and benchmarking workflow
 
 ## Project Structure

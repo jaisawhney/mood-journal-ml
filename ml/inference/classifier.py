@@ -119,8 +119,8 @@ class EmotionClassifier:
             primary, wheel = aggregate_plutchik(scores)
             results.append(
                 {
-                    "primary": primary,
-                    "wheel": wheel,
+                    "primary_emotion": primary,
+                    "plutchik_probabilities": wheel,
                 }
             )
         return results

@@ -1,7 +1,7 @@
 import os
 import yaml
 
-CONFIG_DIR = "ml/configs"
+CONFIG_DIR = "ml/configs/models"
 
 
 def load_config():

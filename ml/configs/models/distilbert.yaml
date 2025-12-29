@@ -3,7 +3,7 @@ model:
   max_length: 128
 
 paths:
-  output_dir: ml/artifacts/distilbert_v1
+  output_dir: artifacts/experiments/distilbert_v1
   
 training:
   learning_rate: 2e-5

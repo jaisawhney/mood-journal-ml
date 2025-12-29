@@ -4,6 +4,7 @@ import InsightsPage from './pages/Home'
 import JournalPage from './pages/JournalPage'
 import HistoryPage from './pages/HistoryPage'
 import Nav from './components/navigation/Nav'
+import SettingsPage from './pages/Settings'
 
 function App() {
   return (
@@ -15,6 +16,7 @@ function App() {
             <Route path='/' element={<InsightsPage />} />
             <Route path='/journal' element={<JournalPage />} />
             <Route path='/entries' element={<HistoryPage />} />
+            <Route path='/settings' element={<SettingsPage />} />
           </Routes>
         </main>
       </div>
