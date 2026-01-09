@@ -1,91 +1,29 @@
 import torch
 
 from pathlib import Path
-from typing import Any, Dict, List
-from transformers import AutoModelForSequenceClassification, AutoTokenizer
+from typing import List
+from transformers import AutoConfig, AutoTokenizer
 
-from ml.config import load_config
-
-PLUTCHIK_MAP = {
-    "joy": {
-        "joyful",
-        "excited",
-        "content",
-        "confident",
-        "grateful",
-        "proud",
-        "impressed",
-    },
-    "sadness": {
-        "sad",
-        "devastated",
-        "disappointed",
-        "lonely",
-        "nostalgic",
-        "sentimental",
-    },
-    "anger": {
-        "angry",
-        "furious",
-        "annoyed",
-        "jealous",
-        "guilty",
-    },
-    "fear": {
-        "afraid",
-        "anxious",
-        "apprehensive",
-        "terrified",
-    },
-    "trust": {
-        "trusting",
-        "faithful",
-        "caring",
-    },
-    "disgust": {
-        "disgusted",
-        "ashamed",
-        "embarrassed",
-    },
-    "surprise": {
-        "surprised",
-    },
-    "anticipation": {
-        "anticipating",
-        "hopeful",
-        "prepared",
-    },
-}
-
-FINE_TO_PARENT = {fine: parent for parent, fines in PLUTCHIK_MAP.items() for fine in fines}
-
-
-def aggregate_plutchik(probs: dict):
-    # Group fine-grained emotion probabilities into Plutchik's primary emotions
-    parent_scores = {p: 0.0 for p in PLUTCHIK_MAP}
-
-    # Sum probabilities for each parent emotion
-    for label, prob in probs.items():
-        parent = FINE_TO_PARENT.get(label)
-        if parent:
-            parent_scores[parent] += prob
-
-    # Determine the primary emotion
-    primary = max(parent_scores, key=parent_scores.get)
-    return primary, parent_scores
+from ml.training.trainer import EmotionModel
+from ml.utils.config import load_config
 
 
 class EmotionClassifier:
     def __init__(self, device: str = None):
         self.cfg = load_config()
-        model_dir = Path(self.cfg["paths"]["output_dir"])
+        model_dir = Path(self.cfg["paths"]["artifacts_dir"] + "/final_model")
 
         if not model_dir.exists():
             raise FileNotFoundError(f"Model directory not found: {model_dir}.")
 
         self.device = device or ("cuda" if torch.cuda.is_available() else "cpu")
-        self.tokenizer = AutoTokenizer.from_pretrained(model_dir)
-        self.model = AutoModelForSequenceClassification.from_pretrained(model_dir)
+        # Load model and tokenizer
+        config = AutoConfig.from_pretrained(model_dir)
+        model = EmotionModel.from_pretrained(model_dir, config=config)
+        tokenizer = AutoTokenizer.from_pretrained(model_dir)
+
+        self.tokenizer = tokenizer
+        self.model = model
         self.model.to(self.device)
         self.model.eval()
 
@@ -96,11 +34,10 @@ class EmotionClassifier:
         self.labels: List[str] = [label for _, label in sorted(id2label.items())]
 
     @torch.no_grad()
-    def predict(self, texts: List[str]) -> List[Dict[str, Any]]:
+    def predict_logits(self, texts: List[str]) -> tuple[torch.Tensor, torch.Tensor]:
         if not texts:
-            return []
+            return torch.empty(0, len(self.labels)), torch.empty(0, 1)
 
-        # Tokenize input texts
         encoded = self.tokenizer(
             texts,
             truncation=True,
@@ -109,21 +46,8 @@ class EmotionClassifier:
             return_tensors="pt",
         ).to(self.device)
 
-        # Get model outputs and compute probabilities
-        outputs = self.model(**encoded)
-        probs = torch.softmax(outputs.logits, dim=-1).cpu()
-        results = []
-        for row in probs:
-            scores = dict(zip(self.labels, row.tolist()))
-
-            primary, wheel = aggregate_plutchik(scores)
-            results.append(
-                {
-                    "primary_emotion": primary,
-                    "plutchik_probabilities": wheel,
-                }
-            )
-        return results
+        logits_emotion, logits_intensity = self.model(**encoded)
+        return logits_emotion.cpu(), logits_intensity.cpu()
 
 
 __all__ = ["EmotionClassifier"]

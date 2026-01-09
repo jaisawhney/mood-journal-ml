@@ -1,26 +1,16 @@
 import datetime
 import json
 import os
+from pathlib import Path
 
-from transformers import (
-    AutoTokenizer,
-    AutoModelForSequenceClassification,
-    Trainer,
-    TrainingArguments,
-    DataCollatorWithPadding,
-)
-from sklearn.metrics import (
-    f1_score,
-    accuracy_score,
-    precision_recall_fscore_support,
-    confusion_matrix,
-)
+import torch
+from torch.utils.data import DataLoader
+from transformers import AutoTokenizer, AutoConfig, DataCollatorWithPadding
 
-from ml.config import load_config
-from ml.data import (
-    load_and_prepare_dataset,
-    tokenize,
-)
+from ml.utils.config import load_config
+from ml.utils.data import load_and_split_lemotif, tokenize
+from ml.training.trainer import EmotionModel
+from ml.utils.metrics import compute_auc_metrics
 
 
 def save_metrics(cfg, metrics, output_path):
@@ -30,106 +20,63 @@ def save_metrics(cfg, metrics, output_path):
         "timestamp": datetime.datetime.now().isoformat(),
         **metrics,
     }
-
-    out_path = os.path.join(output_path, "test_metrics.json")
-
+    out_path = Path(output_path) / "analysis_metrics.json"
+    out_path.parent.mkdir(parents=True, exist_ok=True)
     with open(out_path, "w") as f:
         json.dump(metrics_out, f, indent=2)
-
     print(f"Metrics saved to {out_path}")
 
 
-def compute_metrics_report(predictions, labels, label_names=None):
-    # Per-class metrics
-    precision, recall, f1, support = precision_recall_fscore_support(
-        labels, predictions, average=None, zero_division=0
-    )
-
-    # Overall metrics
-    accuracy = accuracy_score(labels, predictions)
-    macro_f1 = f1_score(labels, predictions, average="macro")
-    micro_f1 = f1_score(labels, predictions, average="micro")
-    weighted_f1 = f1_score(labels, predictions, average="weighted")
-
-    # Confusion matrix
-    num_labels = len(label_names)
-    cm = confusion_matrix(labels, predictions, labels=list(range(num_labels)))
-
-    # Classification report
-    if label_names is None:
-        label_names = [f"class_{i}" for i in range(len(precision))]
-
-    return {
-        "accuracy": accuracy,
-        "macro_f1": macro_f1,
-        "micro_f1": micro_f1,
-        "weighted_f1": weighted_f1,
-        "per_class_precision": precision.tolist(),
-        "per_class_recall": recall.tolist(),
-        "per_class_f1": f1.tolist(),
-        "per_class_support": support.tolist(),
-        "confusion_matrix": cm.tolist(),
-        "label_names": label_names,
-    }
+def collect_predictions(model, dataloader, device):
+    all_logits, all_labels = [], []
+    model.eval()
+    with torch.no_grad():
+        for batch in dataloader:
+            labels = batch.pop("labels")
+            batch = {k: v.to(device) for k, v in batch.items()}
+            logits_emotion, _ = model(**batch)
+            all_logits.append(logits_emotion.cpu())
+            all_labels.append(labels.cpu())
+    return torch.cat(all_logits).numpy(), torch.cat(all_labels).numpy()
 
 
 def main():
     try:
-        # Load configuration
         cfg = load_config()
+        dataset, label_names, id2label, label2id = load_and_split_lemotif()
 
-        model_name = cfg["model"]["name"]
+        model_dir = Path(cfg["paths"]["artifacts_dir"]) / "final_model"
+        tokenizer = AutoTokenizer.from_pretrained(model_dir, use_fast=True)
 
-        # Load and prepare dataset
-        dataset, label_names, _, _ = load_and_prepare_dataset()
-
-        # Determine number of processes for dataset mapping
-        num_proc = max(1, (os.cpu_count() or 1) // 2)
-
-        # Initialize tokenizer
-        tokenizer = AutoTokenizer.from_pretrained(model_name, use_fast=True)
+        config = AutoConfig.from_pretrained(
+            model_dir, num_labels=len(label_names), id2label=id2label, label2id=label2id
+        )
+        model = EmotionModel.from_pretrained(model_dir, config=config)
+        device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        model.to(device)
 
         # Tokenize test set
+        num_proc = max(1, (os.cpu_count() or 1) // 2)
         tokenized_test = dataset["test"].map(
             lambda x: tokenize(x, tokenizer, int(cfg["model"]["max_length"])),
             batched=True,
-            remove_columns=["situation", "Unnamed: 0"],
             num_proc=num_proc,
+            remove_columns=["text"],
         )
         tokenized_test.set_format("torch")
 
-        # Define trainer for evaluation
-        args = TrainingArguments(
-            per_device_eval_batch_size=int(cfg["evaluation"]["eval_batch_size"]),
-            report_to="none",
+        dataloader = DataLoader(
+            tokenized_test,
+            batch_size=int(cfg["evaluation"]["eval_batch_size"]),
+            collate_fn=DataCollatorWithPadding(tokenizer),
         )
 
-        # Load the trained model
-        model = AutoModelForSequenceClassification.from_pretrained(cfg["paths"]["output_dir"])
-        model.eval()
+        logits, labels = collect_predictions(model, dataloader, device)
 
-        trainer = Trainer(
-            model=model,
-            args=args,
-            eval_dataset=tokenized_test,
-            data_collator=DataCollatorWithPadding(tokenizer=tokenizer),
-        )
+        # Compute metrics
+        metrics = compute_auc_metrics(logits, labels, label_names)
 
-        # Run evaluation and get predictions
-        predictions_output = trainer.predict(tokenized_test)
-
-        # Extract predictions and labels
-        logits = predictions_output.predictions
-        labels = predictions_output.label_ids
-        if labels.ndim > 1:
-            labels = labels.argmax(axis=1)
-        predictions = logits.argmax(axis=-1)
-
-        # Compute and display metrics
-        metrics = compute_metrics_report(predictions, labels, label_names)
-
-        # Save metrics
-        save_metrics(cfg, metrics, cfg["paths"]["output_dir"])
+        save_metrics(cfg, metrics, Path(cfg["paths"]["artifacts_dir"]))
     except (OSError, ValueError, RuntimeError) as e:
         print(f"Error during evaluation: {e}")
         raise

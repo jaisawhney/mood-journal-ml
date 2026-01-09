@@ -1,19 +1,49 @@
 model:
   name: huawei-noah/TinyBERT_General_4L_312D
-  max_length: 32
+  max_length: 64
 
 paths:
-  output_dir: artifacts/experiments/tinybert_v1
+  artifacts_dir: artifacts/experiments/tinybert_v1
 
 training:
-  learning_rate: 5e-5
-  train_batch_size: 32
-  eval_batch_size: 32
-  num_epochs: 12
-  weight_decay: 0.01
-  seed: 42
-  warmup_ratio: 0.06
-  label_smoothing_factor: 0.00
+  pretrain:
+    learning_rate: 2e-5
+    train_batch_size: 32
+    eval_batch_size: 32
+    num_epochs: 3
+    weight_decay: 0.01
+    seed: 42
+    warmup_ratio: 0.05
+    label_smoothing_factor: 0.00
+    early_stopping_patience: 2
+    early_stopping_threshold: 0.0
+
+  fine_tune:
+    common:
+      train_batch_size: 32
+      eval_batch_size: 32
+      weight_decay: 0.05
+      seed: 42
+      gradient_accumulation_steps: 2
+      intensity_loss_weight: 0.1
+      metric_loss_weight: 0.15
+
+    frozen:
+      learning_rate: 1e-4
+      num_epochs: 3
+      warmup_ratio: 0.1
+      early_stopping_patience: 2
+      early_stopping_threshold: 0.0001
+      lr_scheduler_type: linear
+
+    unfrozen:
+      learning_rate: 2e-5
+      num_epochs: 25
+      warmup_ratio: 0.15
+      early_stopping_patience: 4
+      early_stopping_threshold: 0.001
+      lr_scheduler_type: cosine
+      max_grad_norm: 0.5
 
 evaluation:
   eval_batch_size: 128
