@@ -1,19 +1,26 @@
-import type { Emotion } from "../types/types"
-import PageHeader from "../components/ui/PageHeader"
-import { HistoryCard } from "../components/history/HistoryCard"
-import { useJournalEntries } from "../hooks/useJournalEntries"
-import { EmptyStateCard } from "../components/ui/EmptyStateCard"
+import PageHeader from "../components/ui/PageHeader";
+import HistoryCard from "../components/history/HistoryCard";
+import { EmptyStateCard } from "../components/ui/EmptyStateCard";
+import { useJournalEntries } from "../hooks/useJournalEntries";
+import { List, useDynamicRowHeight, type RowComponentProps, } from "react-window";
+import type { JournalEntry } from "../storage/JournalDB";
 
-export type JournalEntry = {
-    id: string
-    date: string
-    emotion: Emotion
-    text: string
-    plutchik_probabilities: Record<Emotion, number>
+
+function Row({ index, style, entries, }: RowComponentProps<{ entries: JournalEntry[] }>) {
+    const entry = entries[index];
+
+    return (
+        <div style={style} className="pb-4 px-1 last:pb-0">
+            <HistoryCard entry={entry} />
+        </div>
+    );
 }
 
 export default function JournalHistoryPage() {
-    const { entries } = useJournalEntries()
+    const { entries, loading } = useJournalEntries();
+    const rowHeight = useDynamicRowHeight({
+        defaultRowHeight: 750
+    });
 
     return (
         <div className="page-container">
@@ -23,28 +30,28 @@ export default function JournalHistoryPage() {
                     description="Review past entries and reflect more deeply when you want."
                 />
 
-                {entries.length !== 0 ? (
+                {!loading && entries.length !== 0 ? (
                     <section className="space-y-4">
                         <div className="px-1">
                             <h2 className="header">All entries</h2>
                         </div>
 
                         <div className="grid gap-4">
-                            {entries.map((entry) => (
-                                <HistoryCard
-                                    key={entry.id}
-                                    entry={entry}
-                                />
-                            ))}
+                            <List
+                                rowComponent={Row}
+                                rowCount={entries.length}
+                                rowHeight={rowHeight}
+                                rowProps={{ entries }}
+                            />
                         </div>
                     </section>
-                ) : (
+                ) : !loading ? (
                     <EmptyStateCard
                         header="Nothing here yet"
                         message="Write your first journal entry to see it appear here."
                     />
-                )}
+                ) : null}
             </div>
         </div>
-    )
+    );
 }

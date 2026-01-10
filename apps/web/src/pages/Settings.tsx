@@ -1,10 +1,10 @@
 import classNames from "classnames"
 import PageHeader from "../components/ui/PageHeader"
-import { clearAllJournalEntries } from "../storage/db"
+import { clearAllEntries } from "../storage/journalRepository"
 
 export default function SettingsPage() {
     function handleClearData() {
-        clearAllJournalEntries().then(() => {
+        clearAllEntries().then(() => {
             alert("All journal data cleared.")
         })
     }

@@ -1,17 +1,20 @@
+import React from "react";
 import classNames from "classnames";
-import type { JournalEntry } from "../../types/types";
-import { EmotionIcon } from "../ui/EmotionIcon";
-import { EMOTION_COLORS } from "../../constants/emotionMaps";
+import EmotionIcon from "../ui/EmotionIcon";
+import { getEmotionColor } from "../../constants/emotionMaps";
 import { formatDate } from "../../utils/date";
+import { getAnalysis, getPrimaryEmotion } from "../../utils/emotionHelpers";
+import type { Analysis, Emotion } from "../../types/types";
+import type { JournalEntry } from "../../storage/JournalDB";
 
-export function EntryCard({ entry }: { entry: JournalEntry }) {
-    const emotion = entry.emotion;
-
+function EntryCard({ entry }: { entry: JournalEntry }) {
+    const analysis: Analysis = getAnalysis(entry);
+    const emotion: Emotion | null = getPrimaryEmotion(analysis.buckets);
     return (
         <div className={classNames("card", "p-5 space-y-3")}>
             <div className="flex items-center justify-between">
                 <span className="meta-label">
-                    {formatDate(entry.timestamp)}
+                    {formatDate(entry.createdAt)}
                 </span>
 
                 <div className="mood-badge">
@@ -19,12 +22,12 @@ export function EntryCard({ entry }: { entry: JournalEntry }) {
                         emotion={emotion}
                         size={16}
                         className={classNames(
-                            EMOTION_COLORS[emotion],
+                            getEmotionColor(emotion),
                             "rounded-full"
                         )}
                     />
                     <span className="text-xs font-medium text-slate-600 capitalize">
-                        {emotion}
+                        {emotion || "Neutral"}
                     </span>
                 </div>
             </div>
@@ -35,3 +38,5 @@ export function EntryCard({ entry }: { entry: JournalEntry }) {
         </div>
     );
 }
+
+export default React.memo(EntryCard);

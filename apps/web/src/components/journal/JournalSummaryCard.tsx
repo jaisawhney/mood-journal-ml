@@ -1,25 +1,34 @@
-import type { Emotion, PlutchikResult } from "../../types/types";
 import { useState } from "react";
-import { updatePrimaryEmotion } from "../../storage/db";
-import { useJournalEntries } from "../../hooks/useJournalEntries";
 import { EmotionOverride } from "../ui/EmotionOverride";
+import { getAnalysis, getPrimaryEmotion } from "../../utils/emotionHelpers";
+import { updateUserOverride } from "../../storage/journalRepository";
+import type { Emotion } from "../../types/types";
+import type { JournalEntry } from "../../storage/JournalDB";
 
 type Props = {
-    journalEntryId: number;
-    lastResult: PlutchikResult;
+    journalEntryId: number | null;
+    entry: JournalEntry;
     onClose: () => void;
 };
 
-export default function JournalSummaryCard({ journalEntryId, lastResult, onClose }: Props) {
-    const { refresh } = useJournalEntries()
-
-    const [selectedEmotion, setSelectedEmotion] = useState<Emotion>(lastResult.primary_emotion);
+export default function JournalSummaryCard({ journalEntryId, entry, onClose }: Props) {
     const [showOverride, setShowOverride] = useState(false);
 
-    async function updateEmotion(emotion: Emotion) {
-        setSelectedEmotion(emotion);
-        await updatePrimaryEmotion(journalEntryId, emotion);
-        refresh();
+    const effectiveBuckets = getAnalysis(entry).buckets;
+    const selectedEmotions = Object.keys(effectiveBuckets).map(emotion => emotion) as Emotion[];
+
+    const primaryEmotion = getPrimaryEmotion(effectiveBuckets);
+
+    async function updateEmotions(emotions: Emotion[]) {
+        if (journalEntryId === null) return;
+
+        const buckets: Partial<Record<Emotion, number>> = {};
+
+        for (const emotion of emotions) {
+            buckets[emotion] = 1;
+        }
+
+        updateUserOverride(journalEntryId, { buckets });
     }
 
     return (
@@ -30,7 +39,7 @@ export default function JournalSummaryCard({ journalEntryId, lastResult, onClose
                     <p className="text-lg">
                         Today felt mostly like
                         <span className="font-semibold capitalize">
-                            {" " + selectedEmotion}
+                            {" " + (primaryEmotion || "an indescribable emotion")}
                         </span>
                         .
                     </p>
@@ -53,7 +62,7 @@ export default function JournalSummaryCard({ journalEntryId, lastResult, onClose
             >
                 Write another entry
             </button>
-            {showOverride && (<EmotionOverride value={selectedEmotion} onChange={updateEmotion} />)}
+            {showOverride && (<EmotionOverride value={selectedEmotions} onChange={updateEmotions} />)}
         </section>
     );
 }

@@ -1,5 +1,4 @@
 import classNames from "classnames";
-import React from "react";
 
 interface JournalFormProps {
     text: string;
@@ -30,6 +29,7 @@ export default function JournalForm({
                 value={text}
                 onChange={onChange}
                 rows={6}
+                minLength={20}
                 maxLength={hardLimit}
                 placeholder="Start writing..."
                 className="form-input"
@@ -50,10 +50,10 @@ export default function JournalForm({
             <div className="flex items-center justify-end pt-2">
                 <button
                     type="submit"
-                    disabled={!text.trim() || loading}
+                    disabled={text.trim().length < 20 || loading}
                     className={classNames(
                         "rounded-lg px-6 py-2 text-sm font-semibold transition cursor-pointer",
-                        (!text.trim() || loading
+                        (text.trim().length < 20 || loading
                             ? "bg-slate-200 text-slate-400 cursor-not-allowed"
                             : "bg-neutral-900 text-white hover:bg-neutral-800")
                     )

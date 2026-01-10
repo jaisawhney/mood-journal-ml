@@ -1,14 +1,15 @@
+import React from "react";
 import classNames from "classnames";
-import { EmotionIcon } from "../ui/EmotionIcon";
-import { type Emotion } from "../../types/types";
-import { EMOTION_COLORS } from "../../constants/emotionMaps";
+import EmotionIcon from "../ui/EmotionIcon";
+import { getEmotionColor } from "../../constants/emotionMaps";
+import type { Emotion } from "../../types/types";
 
 type Props = {
     entriesCount: number;
-    primaryEmotion: Emotion;
+    primaryEmotion: Emotion | null;
 };
 
-export function TodaySummary({ entriesCount, primaryEmotion }: Props) {
+function TodaySummary({ entriesCount, primaryEmotion }: Props) {
     const hasEntries = entriesCount > 0;
     return (
         <section className={classNames("card", "flex items-center justify-between gap-6 p-6")}>
@@ -21,15 +22,17 @@ export function TodaySummary({ entriesCount, primaryEmotion }: Props) {
             </div>
 
             <div className="flex items-center gap-4 border-l border-slate-100 pl-6">
-                <div className={classNames("flex h-12 w-12 items-center justify-center rounded-xl", hasEntries ? EMOTION_COLORS[primaryEmotion] : "bg-slate-100")}>
-                    <EmotionIcon emotion={hasEntries ? primaryEmotion : undefined} size={28} />
+                <div className={classNames("flex h-12 w-12 items-center justify-center rounded-xl", hasEntries ? getEmotionColor(primaryEmotion) : "bg-slate-100")}>
+                    <EmotionIcon emotion={hasEntries ? primaryEmotion : null} size={28} />
                 </div>
 
                 <div className="space-y-0.5">
                     <p className="label">Overall mood</p>
-                    <p className="text-strong-sm capitalize leading-tight">{hasEntries ? primaryEmotion : "No entries"}</p>
+                    <p className="text-strong-sm capitalize leading-tight">{hasEntries ? primaryEmotion || "Neutral" : "No entries"}</p>
                 </div>
             </div>
         </section>
     );
 }
+
+export default React.memo(TodaySummary);

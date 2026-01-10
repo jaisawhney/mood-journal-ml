@@ -1,29 +1,28 @@
-import { useCallback, useEffect, useState } from "react";
-import type { JournalEntry } from "../types/types";
-import { getJournalEntries } from "../storage/db";
-
+import { useLiveQuery } from "dexie-react-hooks";
+import { db } from "../storage/JournalDB";
 
 export function useJournalEntries() {
-    const [entries, setEntries] = useState<JournalEntry[]>([]);
-    const [loading, setLoading] = useState<boolean>(false);
-    const [error, setError] = useState<Error | null>(null);
+    const entries = useLiveQuery(
+        () => db.entries.orderBy("createdAt").reverse().toArray(),
+        [],
+    );
 
-    const load = useCallback(async () => {
-        setLoading(true);
-        try {
-            const all = await getJournalEntries();
-            setEntries([...all].sort((a, b) => b.timestamp - a.timestamp));
-        } catch (err) {
-            console.error("Failed to load journal entries:", err);
-            setError(new Error("Failed to load journal entries"));
-        } finally {
-            setLoading(false);
-        }
-    }, []);
+    return {
+        entries: entries ?? [],
+        loading: entries === undefined,
+    };
+}
 
-    useEffect(() => {
-        load();
-    }, [load]);
 
-    return { entries, loading, error, refresh: load, setEntries };
+export function useJournalEntry(id: number) {
+    const entry = useLiveQuery(
+        async () => {
+            return db.entries.get(id);
+        },
+        [id]
+    );
+    return {
+        entry,
+        loading: entry === undefined,
+    };
 }

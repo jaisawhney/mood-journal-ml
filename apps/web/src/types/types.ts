@@ -1,29 +1,24 @@
 export type Emotion =
-    | "joy"
-    | "sadness"
-    | "anger"
-    | "fear"
-    | "trust"
-    | "disgust"
-    | "surprise"
-    | "anticipation";
+    | "Joy"
+    | "Sadness"
+    | "Anger"
+    | "Fear"
+    | "Trust"
+    | "Disgust"
+    | "Surprise"
+    | "Anticipation";
 
-export type PlutchikResult = {
-    primary_emotion: Emotion;
-    plutchik_probabilities: Record<Emotion, number>;
+export type RawEmotionResult = {
+    logits: Record<Emotion, number> | {};
+    deltas: Record<Emotion, number> | {};
+    intensity: number;
+    dominance: number;
 };
 
-export type EmotionPredictionResult = PlutchikResult[];
 
-export interface JournalEntry {
-    id?: number;
-    text: string;
-    emotion: Emotion;
-    result: PlutchikResult;
-    timestamp: number;
-}
-
-export type EmotionSummary = {
-    label: Emotion;
-    value: number;
+export type Analysis = {
+    buckets: Record<Emotion, number>;
+    intensity: number;
+    dominance: number;
+    isOverridden: boolean;
 };
