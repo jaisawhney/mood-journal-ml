@@ -1,13 +1,22 @@
 # Mood Journal
 
-A full-stack emotion classification Progressive Web App (PWA) consisting of a REST API back-end and a ReactJS front-end for mood journaling and analysis. Uses fine-tuned transformer models (DistilBERT, MiniLM) for emotion detection from user-inputted text.
+Offline-first Progressive Web App (PWA) for multi-label emotion classification and journaling. All inference runs client-side in-browser using a fine-tuned transformer (MiniLM, etc). FastAPI backend serves static assets and model files.
 
-## Overview
+## Key Features
+- Offline-first PWA
+	- All inference and journaling run fully client-side via a service worker and Transformer.js
+	- Emotion analysis is performed locally in the browser so no user data or journal entries ever leave the device
+- Service worker powered by Workbox
+	- Pre-caches all model files and ONNX files for in-browser offline ML inference
+	- After first load, all features (including ML) work fully offline (offline-first caching strategy)
+- Multi-label emotion classification
+	- Two-stage fine-tuning: GoEmotions (general emotions), Lemotif (journal style)
 
-- Emotion classification API: FastAPI inference for real-time predictions
-- Progressive Web App: Offline-capable frontend for mood journaling
-- Model fine-tuning based on the `empathetic-dialogues` dataset
-- Full training, evaluation, and benchmarking workflow
+## Tech Stack
+
+**Backend/ML:** Python, FastAPI, PyTorch, Transformers, ONNX
+
+**Frontend:** React, TypeScript, Vite, Tailwind CSS, Workbox
 
 ## Project Structure
 
@@ -19,59 +28,61 @@ A full-stack emotion classification Progressive Web App (PWA) consisting of a RE
 │   ├── training/       # Model training scripts
 │   ├── inference/      # Inference wrapper
 │   ├── evaluation/     # Analysis and metrics
+│   ├── calibration/    # Calibration scripts
+│   ├── datasets/       # Datasets
+│   ├── export/         # ONNX export
+│   ├── utils/          # Helpers
 │   ├── configs/        # YAML configs
 ├── notebooks/          # Jupyter notebooks
 ├── tests/              # Pytest
 └── pyproject.toml      # Python project configuration
 ```
 
-## Quick Start
+## Datasets
+- GoEmotions (Demszky et al., ACL 2020): First-stage fine-tuning
+- Lemotif (Li & Parikh, arXiv 2019): Main dataset, augmented with synthetic entries for rare emotions, intensity, and neutral baseline
+
+## Notebooks
+- `01_dataset_exploration.ipynb`: EDA
+- `02_model_comparison_emotion.ipynb`: Model comparison
+- `03_data_augmentation_analysis.ipynb`: Augmentation
+
+## Installation & Usage
 
 ### Prerequisites
 - Python 3.10+
-- Set `MODEL_CONFIG` environment variable (e.g., `distilbert.yaml`)
+- Node.js 18+ (for frontend dev)
 
-### Installation
-
+### Install Python dependencies
 ```bash
-pip install -e ".[api,ml]"
+pip install -e ".[api,ml,dev]"
 ```
 
-### Train the Model
-
+### Train the model
 ```bash
 export MODEL_CONFIG=distilbert.yaml
 python -m ml.training.train
 ```
-The above will:
-- Download the `dair-ai/emotion` dataset
-- Fine-tune the model specified in the config
-- Save the trained model to `ml/artifacts/` directory
 
-### Run the API
-
+### Run the backend API
 ```bash
 uvicorn apps.api.main:app --reload
 ```
+API docs: http://localhost:8000/docs
 
-The API will be available at `http://localhost:8000` with docs at `/docs`.
-
-### API Usage
-
-Make a prediction:
+### Frontend (development)
 ```bash
-curl -X POST "http://localhost:8000/predict" \
-  -H "Content-Type: application/json" \
-  -d '{"texts": ["I am feeling wonderful!"]}'
+cd apps/web
+npm install
+npm run dev
 ```
 
-## Development
-
-Run tests:
+## Testing
 ```bash
 pytest
 ```
 
 ## References
 
-Dataset: `empathetic-dialogues` (Rashkin et al., ACL 2019).
+- Dataset: `lemotif` (Li & Parikh, arXiv 2019)
+- Dataset: `goemotions` (Demszky et al., ACL 2020)

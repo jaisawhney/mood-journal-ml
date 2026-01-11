@@ -11,6 +11,8 @@ const POWER_LAW_EXPONENT = 0.5;
 // Mean intensity for "neutral" from calibration data.
 const NEUTRAL_MEAN = 0.007551793474704027;
 // Per-label delta thresholds (90th percentile from calibration)
+
+//TODO: These calibration values should be loaded from a config file or endpoint.
 const CALIBRATION: Record<string, { mean: number; temp: number; threshold: number }> = {
     "afraid": { mean: -3.691885471343994, temp: 1.0532969236373901, threshold: 0.07633624991919026 },
     "angry": { mean: -3.665382146835327, temp: 0.9235321283340454, threshold: 0.06339110244701052 },

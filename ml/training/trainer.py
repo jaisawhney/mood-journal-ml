@@ -65,19 +65,19 @@ def train_go_emotions():
     )
 
     args = TrainingArguments(
-        output_dir=OUTPUT_DIR / "pretrain",
+        output_dir=OUTPUT_DIR / "goemotions",
         eval_strategy="epoch",
         save_strategy="epoch",
         load_best_model_at_end=True,
         metric_for_best_model="macro_auc",
         greater_is_better=True,
-        seed=cfg["training"]["pretrain"]["seed"],
-        learning_rate=float(cfg["training"]["pretrain"]["learning_rate"]),
-        weight_decay=float(cfg["training"]["pretrain"]["weight_decay"]),
-        per_device_train_batch_size=int(cfg["training"]["pretrain"]["train_batch_size"]),
-        per_device_eval_batch_size=int(cfg["training"]["pretrain"]["eval_batch_size"]),
-        num_train_epochs=int(cfg["training"]["pretrain"]["num_epochs"]),
-        warmup_ratio=float(cfg["training"]["pretrain"]["warmup_ratio"]),
+        seed=cfg["training"]["goemotions"]["seed"],
+        learning_rate=float(cfg["training"]["goemotions"]["learning_rate"]),
+        weight_decay=float(cfg["training"]["goemotions"]["weight_decay"]),
+        per_device_train_batch_size=int(cfg["training"]["goemotions"]["train_batch_size"]),
+        per_device_eval_batch_size=int(cfg["training"]["goemotions"]["eval_batch_size"]),
+        num_train_epochs=int(cfg["training"]["goemotions"]["num_epochs"]),
+        warmup_ratio=float(cfg["training"]["goemotions"]["warmup_ratio"]),
         report_to="none",
         bf16=getattr(torch.cuda, "is_bf16_supported", lambda: False)(),
         fp16=False,
@@ -96,9 +96,11 @@ def train_go_emotions():
         pos_weight=pos_weight.to(args.device),
         callbacks=[
             EarlyStoppingCallback(
-                early_stopping_patience=int(cfg["training"]["pretrain"]["early_stopping_patience"]),
+                early_stopping_patience=int(
+                    cfg["training"]["goemotions"]["early_stopping_patience"]
+                ),
                 early_stopping_threshold=float(
-                    cfg["training"]["pretrain"]["early_stopping_threshold"]
+                    cfg["training"]["goemotions"]["early_stopping_threshold"]
                 ),
             )
         ],
@@ -232,8 +234,8 @@ class MultiLabelTrainer(Trainer):
             embeddings_emotion,
             indices_tuple=indices_tuple,
         )
-        w_int = cfg["training"]["fine_tune"]["common"]["intensity_loss_weight"]
-        w_met = cfg["training"]["fine_tune"]["common"]["metric_loss_weight"]
+        w_int = cfg["training"]["lemotif"]["common"]["intensity_loss_weight"]
+        w_met = cfg["training"]["lemotif"]["common"]["metric_loss_weight"]
 
         loss = emotion_loss + w_int * intensity_loss + w_met * loss_metric
         if return_outputs:
@@ -276,12 +278,12 @@ def train_lemotif():
         intensity_prior=float(intensity_median),
     )
 
-    common_cfg = cfg["training"]["fine_tune"]["common"]
-    frozen_cfg = cfg["training"]["fine_tune"]["frozen"]
-    unfrozen_cfg = cfg["training"]["fine_tune"]["unfrozen"]
+    common_cfg = cfg["training"]["lemotif"]["common"]
+    frozen_cfg = cfg["training"]["lemotif"]["frozen"]
+    unfrozen_cfg = cfg["training"]["lemotif"]["unfrozen"]
 
     args_frozen = TrainingArguments(
-        output_dir=Path(OUTPUT_DIR) / "fine_tune_frozen",
+        output_dir=Path(OUTPUT_DIR) / "lemotif_frozen",
         eval_strategy="epoch",
         save_strategy="epoch",
         load_best_model_at_end=True,
@@ -331,7 +333,7 @@ def train_lemotif():
         param.requires_grad = True
 
     args_unfrozen = TrainingArguments(
-        output_dir=Path(OUTPUT_DIR) / "fine_tune",
+        output_dir=Path(OUTPUT_DIR) / "lemotif",
         eval_strategy="epoch",
         save_strategy="epoch",
         load_best_model_at_end=True,
