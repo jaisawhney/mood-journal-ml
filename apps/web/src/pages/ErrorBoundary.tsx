@@ -28,10 +28,14 @@ export default class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBo
     render() {
         if (this.state.hasError) {
             return (
-                <div className="flex flex-col items-center justify-center min-h-[60vh] text-center">
-                    <h1 className="text-4xl font-bold mb-4">Something went wrong</h1>
-                    <p className="text-lg text-slate-600 mb-6">An unexpected error occurred.</p>
-                    <Link to="/" className="btn bg-white text-slate-800">Go Home</Link>
+                <div className="page-container">
+                    <div className="page-content-wide">
+                        <div className="flex flex-col items-center justify-center min-h-[60vh] text-center">
+                            <h1 className="text-4xl font-bold mb-4">Something went wrong</h1>
+                            <p className="text-lg text-slate-600 mb-6">An unexpected error occurred.</p>
+                            <Link to="/" className="btn bg-white text-slate-800">Go Home</Link>
+                        </div>
+                    </div>
                 </div>
             );
         }

@@ -1,6 +1,7 @@
 
 import type { Emotion, RawEmotionResult } from "../types/types";
 import { buildEmotionBuckets } from "../utils/emotionHelpers";
+import { MAX_BUCKETS } from "../constants/maxBuckets";
 import { db } from "./JournalDB";
 import type { JournalEntry, UserOverride } from "./JournalDB";
 
@@ -58,4 +59,10 @@ export async function replaceAllEntries(entries: JournalEntry[]) {
 
 export async function clearAllEntries() {
     return db.entries.clear();
+}
+
+export function getDisplayBuckets(buckets: Record<Emotion, number>) {
+    return Object.entries(buckets)
+        .sort((a, b) => b[1] - a[1])
+        .slice(0, MAX_BUCKETS);
 }

@@ -18,21 +18,20 @@ function EntryCard({ entry }: { entry: JournalEntry }) {
                 </span>
 
                 <div className="mood-badge">
-                    <EmotionIcon
-                        emotion={emotion}
-                        size={16}
-                        className={classNames(
-                            getEmotionColor(emotion),
-                            "rounded-full"
-                        )}
-                    />
-                    <span className="text-xs font-medium text-slate-600 capitalize">
+                    <span className={classNames(getEmotionColor(emotion),
+                        "mood-badge-icon rounded-full")}>
+                        <EmotionIcon
+                            emotion={emotion}
+                            size={16}
+                        />
+                    </span>
+                    <span className="mood-badge-text">
                         {emotion || "Neutral"}
                     </span>
                 </div>
             </div>
 
-            <p className="text-sm leading-relaxed text-neutral-700 whitespace-pre-wrap">
+            <p className="entry-text">
                 {entry.text}
             </p>
         </div>

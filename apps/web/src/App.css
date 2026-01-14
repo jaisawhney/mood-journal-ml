@@ -3,36 +3,81 @@
 @custom-variant dark (&:where([data-theme=dark] &));
 
 @layer components {
+
   /* Fonts & Text */
   .label {
     @apply text-xs font-medium uppercase tracking-wide text-slate-500;
+
+    @variant dark {
+      @apply text-white;
+    }
   }
+
   .header {
     @apply text-sm font-semibold uppercase tracking-wide text-neutral-700;
+
+    @variant dark {
+      @apply text-neutral-300;
+    }
   }
+
   .meta-label {
     @apply text-xs font-medium uppercase tracking-wide text-slate-400;
+
+    @variant dark {
+      @apply text-neutral-200;
+    }
   }
+
+  .text-secondary {
+    @apply text-sm text-slate-500;
+
+    @variant dark {
+      @apply text-neutral-400;
+    }
+  }
+
   .text-muted {
     @apply mt-1 text-sm text-slate-500 leading-relaxed;
+
+    @variant dark {
+      @apply text-white;
+    }
   }
+
   .text-strong-sm {
     @apply text-sm font-semibold text-neutral-800;
+
+    @variant dark {
+      @apply text-white;
+    }
   }
-  .text-medium-sm{
+
+  .text-medium-sm {
     @apply text-sm font-medium text-neutral-800;
+
+    @variant dark {
+      @apply text-white;
+    }
   }
 
   /* Layout */
   .page-container {
-    @apply min-h-screen px-6 py-8;
+    @apply min-h-screen px-6 py-8 bg-neutral-50 text-slate-800;
+
+    @variant dark {
+      @apply bg-neutral-900 text-neutral-200 shadow-none;
+    }
   }
+
   .page-content {
     @apply mx-auto max-w-3xl md:space-y-10 space-y-5;
   }
+
   .page-content-wide {
     @apply mx-auto max-w-6xl md:space-y-10 space-y-5;
   }
+
   .page-content-lg {
     @apply mx-auto max-w-4xl md:space-y-10 space-y-5;
   }
@@ -40,21 +85,158 @@
   /* Cards */
   .card {
     @apply rounded-2xl bg-white border border-slate-100 shadow-sm;
+
+    @variant dark {
+      @apply bg-neutral-800 border-none shadow-none;
+    }
+  }
+
+  .entry-text {
+    @apply text-sm leading-relaxed text-neutral-700 whitespace-pre-wrap;
+
+    @variant dark {
+      @apply text-neutral-200;
+    }
   }
 
   /* Form Elements */
   .form-input {
     @apply w-full rounded-lg border border-slate-200 bg-white p-4 text-sm text-neutral-800 placeholder:text-slate-400 focus:border-slate-300 focus:outline-none focus:ring-2 focus:ring-slate-100;
+
+    @variant dark {
+      @apply bg-neutral-900 border-none text-neutral-100 placeholder:text-neutral-500 focus:border-none focus:ring-violet-500;
+    }
   }
+
+  /* Mood Badge */
   .mood-badge {
     @apply inline-flex items-center gap-2 rounded-full bg-slate-50 px-3 py-1;
+
+    @variant dark {
+      @apply bg-neutral-700;
+    }
+  }
+
+  .mood-badge-text {
+    @apply text-xs font-medium text-slate-600 capitalize;
+
+    @variant dark {
+      @apply text-neutral-200;
+    }
+  }
+
+  .mood-badge-icon {
+    @apply flex items-center justify-center p-0.25;
   }
 
   /* Buttons */
   .btn-icon {
     @apply inline-flex items-center justify-center rounded-lg border border-slate-200 px-3 py-2 text-slate-600 hover:bg-slate-50 hover:text-slate-800 cursor-pointer;
+
+    @variant dark {
+      @apply text-slate-300 hover:bg-slate-800 hover:text-neutral-200;
+    }
   }
+
   .btn {
     @apply rounded-lg border border-slate-200 px-4 py-2 text-sm font-medium text-neutral-700 hover:bg-slate-50 cursor-pointer;
+
+    @variant dark {
+      @apply text-neutral-300 hover:bg-slate-800 hover:text-neutral-200;
+    }
+  }
+
+  /* Navigation */
+  .nav-desktop {
+    @apply hidden md:flex fixed left-0 top-0 h-screen w-56 bg-white border-r border-neutral-200 shadow-sm z-30 flex-col;
+
+    @variant dark {
+      @apply bg-neutral-950 border-none shadow-none;
+    }
+  }
+
+  .nav-desktop-header {
+    @apply p-6 border-b border-neutral-200;
+
+    @variant dark {
+      @apply border-none;
+    }
+  }
+
+  .nav-desktop-title {
+    @apply text-xl font-bold text-slate-900;
+
+    @variant dark {
+      @apply text-slate-100;
+    }
+  }
+
+  .nav-desktop-list {
+    @apply mt-6 space-y-2 px-4;
+  }
+
+  .nav-desktop-link {
+    @apply flex items-center gap-3 px-4 py-3 rounded-lg transition-colors text-slate-600 hover:bg-slate-100;
+
+    @variant dark {
+      @apply text-slate-300 hover:bg-slate-800;
+    }
+  }
+
+  .nav-desktop-link-active {
+    @apply bg-violet-100 text-violet-700;
+
+    @variant dark {
+      @apply bg-violet-900 text-violet-200;
+    }
+  }
+
+  .nav-mobile {
+    @apply md:hidden fixed bottom-0 left-0 right-0 h-16 border-t border-gray-200 bg-white z-30;
+
+    @variant dark {
+      @apply bg-neutral-950 border-none;
+    }
+  }
+
+  .nav-mobile-item {
+    @apply flex flex-1 flex-col items-center justify-center;
+  }
+
+  .nav-mobile-icon {
+    @apply flex items-center justify-center rounded-full h-10 w-10 transition-colors duration-200 text-slate-600;
+
+    @variant dark {
+      @apply text-slate-300;
+    }
+  }
+
+  .nav-mobile-icon-active {
+    @apply bg-violet-100 text-violet-600;
+
+    @variant dark {
+      @apply bg-violet-900 text-violet-200;
+    }
+  }
+
+  /* Page Header */
+  .page-header {
+    @apply flex items-start justify-between gap-4;
+  }
+
+  .page-header-title {
+    @apply text-2xl sm:text-3xl font-semibold text-neutral-800;
+
+    @variant dark {
+      @apply text-neutral-100;
+    }
+  }
+
+  .page-header-desc {
+    @apply text-neutral-500;
+
+    @variant dark {
+      @apply text-neutral-400;
+    }
   }
 }

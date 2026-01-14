@@ -7,6 +7,7 @@ import { getEmotionColor } from "../../constants/emotionMaps";
 import { formatDate } from "../../utils/date";
 import { updateUserOverride } from "../../storage/journalRepository";
 import { getAnalysis, getPrimaryEmotion } from "../../utils/emotionHelpers";
+import { getDisplayBuckets } from "../../storage/journalRepository";
 import type { Analysis, Emotion } from "../../types/types";
 import type { JournalEntry } from "../../storage/JournalDB";
 
@@ -19,16 +20,14 @@ function HistoryCard({ entry }: Props) {
 
     const journalEntryId = entry.id!;
     const analysis: Analysis = getAnalysis(entry);
-    const effectiveBuckets = analysis.buckets;
-
-    const selectedEmotions = Object.keys(effectiveBuckets).map(emotion => emotion) as Emotion[];
-
-    const primaryEmotion = getPrimaryEmotion(effectiveBuckets);
+    const displayBuckets = getDisplayBuckets(analysis.buckets);
+    const selectedEmotions = displayBuckets.map(([emotion]) => emotion as Emotion);
+    const primaryEmotion = getPrimaryEmotion(Object.fromEntries(displayBuckets));
 
     async function updateEmotions(emotions: Emotion[]) {
         const buckets: Partial<Record<Emotion, number>> = {};
         for (const emotion of emotions) {
-            buckets[emotion] = 1;
+            buckets[emotion] = analysis.buckets[emotion] ?? 1;
         }
         await updateUserOverride(journalEntryId, { buckets });
     }
@@ -41,27 +40,28 @@ function HistoryCard({ entry }: Props) {
                 </span>
 
                 <div className="mood-badge">
-                    <EmotionIcon
-                        emotion={primaryEmotion}
-                        size={16}
-                        className={classNames(
-                            getEmotionColor(primaryEmotion),
-                            "rounded-full"
-                        )} />
-                    <span className="text-xs font-medium text-slate-600 capitalize">
+                    <span className={classNames(
+                        getEmotionColor(primaryEmotion),
+                        "rounded-full mood-badge-icon"
+                    )}>
+                        <EmotionIcon
+                            emotion={primaryEmotion}
+                            size={16} />
+                    </span>
+                    <span className="mood-badge-text">
                         {primaryEmotion || "Neutral"}
                     </span>
                 </div>
             </div>
 
-            <p className="text-sm leading-relaxed text-neutral-700 whitespace-pre-wrap">
+            <p className="entry-text">
                 {entry.text}
             </p>
 
             <button
                 type="button"
                 onClick={() => setExpanded(v => !v)}
-                className="text-xs text-slate-400 hover:text-slate-600 transition cursor-pointer"
+                className="text-xs text-secondary hover:text-slate-400 transition cursor-pointer"
             >
                 {expanded ? "Hide details" : "View details"}
             </button>
@@ -69,13 +69,13 @@ function HistoryCard({ entry }: Props) {
             {expanded && (
                 <div className="pt-4 border-t border-slate-100 space-y-4">
                     {analysis.isOverridden && (
-                        <div className="text-xs text-slate-400">
+                        <div className="text-xs text-secondary">
                             Emotions adjusted by you
                         </div>
                     )}
 
-                    <div className="rounded-lg bg-slate-50 p-3 space-y-2">
-                        <p className="text-xs text-slate-500">
+                    <div className="rounded-lg bg-slate-50 p-3 space-y-2 dark:bg-transparent">
+                        <p className="text-xs text-secondary">
                             Click to adjust
                         </p>
                         <EmotionOverride

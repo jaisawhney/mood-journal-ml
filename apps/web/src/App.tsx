@@ -17,9 +17,9 @@ function App() {
   return (
     <Router>
       <Toaster position="bottom-right" richColors />
-      <div className='w-screen min-h-screen text-slate-800'>
+      <div className='w-screen min-h-screen'>
         <Nav />
-        <main className='pb-16 md:ml-56 md:pb-0'>
+        <main className='pb-16 md:ml-56 md:pb-0' role="main">
           <Suspense fallback={<PageLoading />}>
             <Routes>
               <Route path='/' element={

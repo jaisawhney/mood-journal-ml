@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { EmotionOverride } from "../ui/EmotionOverride";
 import { getAnalysis, getPrimaryEmotion } from "../../utils/emotionHelpers";
+import { getDisplayBuckets } from "../../storage/journalRepository";
 import { updateUserOverride } from "../../storage/journalRepository";
 import type { Emotion } from "../../types/types";
 import type { JournalEntry } from "../../storage/JournalDB";
@@ -14,10 +15,10 @@ type Props = {
 export default function JournalSummaryCard({ journalEntryId, entry, onClose }: Props) {
     const [showOverride, setShowOverride] = useState(false);
 
-    const effectiveBuckets = getAnalysis(entry).buckets;
-    const selectedEmotions = Object.keys(effectiveBuckets).map(emotion => emotion) as Emotion[];
-
-    const primaryEmotion = getPrimaryEmotion(effectiveBuckets);
+    const analysis = getAnalysis(entry);
+    const displayBuckets = getDisplayBuckets(analysis.buckets);
+    const selectedEmotions = displayBuckets.map(([emotion]) => emotion as Emotion);
+    const primaryEmotion = getPrimaryEmotion(Object.fromEntries(displayBuckets));
 
     async function updateEmotions(emotions: Emotion[]) {
         if (journalEntryId === null) return;
@@ -25,7 +26,7 @@ export default function JournalSummaryCard({ journalEntryId, entry, onClose }: P
         const buckets: Partial<Record<Emotion, number>> = {};
 
         for (const emotion of emotions) {
-            buckets[emotion] = 1;
+            buckets[emotion] = analysis.buckets[emotion] ?? 1;
         }
 
         updateUserOverride(journalEntryId, { buckets });
@@ -49,7 +50,7 @@ export default function JournalSummaryCard({ journalEntryId, entry, onClose }: P
                     <button
                         type="button"
                         onClick={() => setShowOverride(true)}
-                        className="text-xs text-slate-400 hover:text-slate-600 hover:underline"
+                        className="text-xs text-secondary hover:text-slate-600 hover:underline cursor-pointer"
                     >
                         Feels a little off?
                     </button>
@@ -58,7 +59,7 @@ export default function JournalSummaryCard({ journalEntryId, entry, onClose }: P
 
             <button
                 onClick={onClose}
-                className="rounded-lg px-6 py-2 text-sm font-semibold bg-neutral-900 text-white hover:bg-neutral-800 cursor-pointer"
+                className="rounded-lg px-6 py-2 text-sm font-semibold bg-neutral-900 text-white hover:bg-neutral-800 dark:bg-white dark:text-neutral-900 dark:hover:bg-neutral-100 cursor-pointer"
             >
                 Write another entry
             </button>

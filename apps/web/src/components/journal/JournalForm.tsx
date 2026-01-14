@@ -21,7 +21,7 @@ export default function JournalForm({
         <form onSubmit={onSubmit} className="card p-6 space-y-4">
             <div className="space-y-1">
                 <h2 className="header">Your entry</h2>
-                <p className="text-sm text-slate-400">
+                <p className="text-secondary">
                     Write about what stood out today, a moment that shifted your mood, or anything still lingering.
                 </p>
             </div>
@@ -34,16 +34,17 @@ export default function JournalForm({
                 placeholder="Start writing..."
                 className="form-input"
                 autoFocus
+                aria-label="Journal entry text area"
             />
             <div className="flex justify-between items-center text-xs text-slate-400">
                 <span>
                     {showHint && (
-                        <span className="text-slate-500">
+                        <span className="text-secondary">
                             Longer entries often give clearer emotional insights.
                         </span>
                     )}
                 </span>
-                <span className={text.length >= hardLimit ? "text-red-500" : "text-slate-400"}>
+                <span className={text.length >= hardLimit ? "text-red-500" : "text-secondary"}>
                     {text.length}/{hardLimit}
                 </span>
             </div>
@@ -54,8 +55,8 @@ export default function JournalForm({
                     className={classNames(
                         "rounded-lg px-6 py-2 text-sm font-semibold transition cursor-pointer",
                         (text.trim().length < 20 || loading
-                            ? "bg-slate-200 text-slate-400 cursor-not-allowed"
-                            : "bg-neutral-900 text-white hover:bg-neutral-800")
+                            ? "bg-slate-200 text-slate-400 cursor-not-allowed dark:bg-neutral-600 dark:text-neutral-500"
+                            : "bg-neutral-900 text-white hover:bg-neutral-800 dark:bg-white dark:text-neutral-900 dark:hover:bg-neutral-100")
                     )
                     }
                 >

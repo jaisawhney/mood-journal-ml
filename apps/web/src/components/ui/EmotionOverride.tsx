@@ -29,9 +29,9 @@ export const EmotionOverride: React.FC<EmotionOverrideProps> = ({ value, onChang
                         type="button"
                         onClick={() => toggleEmotion(item as Emotion)}
                         className={classNames(
-                            "mood-badge  font-medium transition text-slate-600 cursor-pointer",
+                            "mood-badge mood-badge-text font-medium transition cursor-pointer",
                             size === "sm" ? "px-3 py-1.5 text-xs" : "px-4 py-2 text-sm",
-                            selected ? getEmotionColor(item as Emotion) : "bg-slate-100 hover:bg-slate-200"
+                            selected ? getEmotionColor(item as Emotion) : "bg-slate-100 hover:bg-slate-200 dark:bg-neutral-600 dark:hover:bg-neutral-700",
                         )}
                         disabled={disabled}
                     >

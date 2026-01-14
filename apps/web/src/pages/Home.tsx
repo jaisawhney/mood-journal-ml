@@ -70,8 +70,6 @@ function getChartData(entries: JournalEntry[], days: number) {
     const sum = dayEntries.reduce((acc, e) => acc + (e.analysis?.intensity ?? 0), 0);
     return sum / dayEntries.length;
   });
-
-  //const reference = entries.map(e => e.analysis?.intensity ?? 0);
   const normalizedDaily: number[] = normalizeToPercentile(dailyAverages, dailyAverages);
   return {
     labels,
@@ -125,11 +123,11 @@ export default function Home() {
         <div className="space-y-4">
           <TodaySummary entriesCount={recentEntries.length} primaryEmotion={primaryEmotion} />
           <section className="card p-6">
-            <h3 className="header">Intensity (last {HISTORY_DAYS} days)</h3>
+            <h2 className="header">Intensity (last {HISTORY_DAYS} days)</h2>
             <div style={{ height: 160 }} className="mt-3">
               <Line data={chartData} options={chartOptions} />
             </div>
-            <p className="text-sm text-slate-500 mt-3">Intensity over time.</p>
+            <p className="text-secondary mt-3">Intensity over time.</p>
           </section>
           <EntryList entries={recentEntries} />
         </div>

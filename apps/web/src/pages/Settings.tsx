@@ -137,14 +137,14 @@ export default function SettingsPage() {
                             <p className="text-medium-sm">
                                 Clear all journal data
                             </p>
-                            <p className="text-sm text-slate-500">
+                            <p className="text-secondary">
                                 Permanently remove all entries from this device
                             </p>
                         </div>
                         <button
                             type="button"
                             onClick={handleClearData}
-                            className="btn bg-red-50 text-red-700 hover:bg-red-100"
+                            className="btn bg-red-50 text-red-700 hover:bg-red-100 dark:bg-red-900 dark:text-white dark:hover:bg-red-800"
                         >
                             {armedClear ? "Press again to confirm" : "Clear data"}
                         </button>
@@ -179,7 +179,7 @@ export default function SettingsPage() {
                             <button
                                 type="button"
                                 onClick={handleImport}
-                                className={classNames("btn", armedImport ? "bg-red-50 text-red-700 hover:bg-red-100" : "")}
+                                className={classNames("btn", armedImport ? "bg-red-50 text-red-700 hover:bg-red-100 dark:bg-red-900 dark:text-white dark:hover:bg-red-800" : "")}
                             >
                                 {armedImport ? "Press again to confirm" : "Import"}
                             </button>

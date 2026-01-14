@@ -14,11 +14,11 @@ function TodaySummary({ entriesCount, primaryEmotion }: Props) {
     return (
         <section className={classNames("card", "flex items-center justify-between gap-6 p-6")}>
             <div className="space-y-2">
-                <span className="mood-badge text-xs font-medium text-slate-600 uppercase tracking-wide">
+                <span className="mood-badge label">
                     Today
                 </span>
                 <p className="text-strong-sm">You logged {entriesCount} entries today</p>
-                <p className="text-sm text-slate-500">Quick snapshot of your day so far</p>
+                <p className="text-secondary">Quick snapshot of your day so far</p>
             </div>
 
             <div className="flex items-center gap-4 border-l border-slate-100 pl-6">

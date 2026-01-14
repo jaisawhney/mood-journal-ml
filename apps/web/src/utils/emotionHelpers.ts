@@ -90,9 +90,7 @@ export function buildEmotionBuckets(
     }
     buckets.sort((a, b) => b.score - a.score);
 
-    if (buckets.length === 0) return buckets;
-    const MAX_BUCKETS = 3;
-    return buckets.slice(0, MAX_BUCKETS);
+    return buckets;
 }
 
 
@@ -142,5 +140,5 @@ export function normalizeToPercentile(
     const percentileIndex = Math.ceil(sorted.length * percentile) - 1;
     const cappedIndex = Math.max(0, Math.min(percentileIndex, sorted.length - 1));
     const cap = sorted[cappedIndex] ?? 1;
-    return values.map(v => Math.min(v / cap, 1));
+    return values.map(v => Math.min(v / cap, 1) || 0);
 }

@@ -18,20 +18,20 @@ const navLinks: NavLink[] = [
 export default function Nav() {
     return (
         <>
-            <aside className="hidden md:flex fixed left-0 top-0 h-screen w-56 bg-white border-r border-neutral-200 shadow-sm z-30 flex-col">
-                <div className="p-6 border-b border-neutral-200">
-                    <Link to="/" className="text-xl font-bold text-slate-900">
+            <aside className="nav-desktop">
+                <div className="nav-desktop-header">
+                    <Link to="/" className="nav-desktop-title">
                         Mood Journal
                     </Link>
                 </div>
-                <nav className="mt-6 space-y-2 px-4" aria-label="Desktop navigation">
+                <nav className="nav-desktop-list" aria-label="Desktop navigation" role="navigation">
                     {navLinks.map((link) => (
                         <DesktopNavItem key={link.to} {...link} />
                     ))}
                 </nav>
             </aside>
 
-            <nav className="md:hidden fixed bottom-0 left-0 right-0 h-16 border-t border-gray-200 bg-white z-30" aria-label="Mobile navigation">
+            <nav className="nav-mobile" aria-label="Mobile navigation" role="navigation">
                 <div className="flex h-full items-center justify-around">
                     {navLinks.map((link) => (
                         <MobileNavItem key={link.to} {...link} />
