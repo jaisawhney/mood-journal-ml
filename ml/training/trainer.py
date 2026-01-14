@@ -16,7 +16,7 @@ from transformers import (
     Trainer,
     TrainingArguments,
 )
-from pytorch_metric_learning.losses import SupConLoss
+from pytorch_metric_learning import losses, miners
 
 from ml.utils.config import load_config
 from ml.utils.data import load_and_split_lemotif, load_go_emotions, tokenize
@@ -113,6 +113,30 @@ def train_go_emotions():
     tokenizer.save_pretrained(base_out)
 
 
+# https://github.com/KevinMusgrave/pytorch-metric-learning/issues/669#issuecomment-1763542204
+# Custom miner for multi-label data (see the issue for explanation why a custom miner is needed)
+class MultiLabelEmotionMiner(miners.BaseMiner):
+    def __init__(self, overlap_threshold=0.0, **kwargs):
+        super().__init__(**kwargs)
+        self.overlap_threshold = overlap_threshold
+
+    def mine(self, embeddings, labels, ref_emb=None, ref_labels=None):
+        labels = labels.bool()
+        intersection = (labels.unsqueeze(1) & labels.unsqueeze(0)).sum(-1).float()
+        union = (labels.unsqueeze(1) | labels.unsqueeze(0)).sum(-1).float()
+        jaccard_sim = intersection / (union + 1e-8)
+
+        pos_mask = jaccard_sim > self.overlap_threshold
+        neg_mask = jaccard_sim == 0.0
+
+        pos_mask.fill_diagonal_(False)
+        neg_mask.fill_diagonal_(False)
+
+        a1, p = torch.where(pos_mask)
+        a2, n = torch.where(neg_mask)
+        return (a1, p, a2, n)
+
+
 class EmotionModel(PreTrainedModel):
     config_class = AutoConfig
 
@@ -134,7 +158,8 @@ class EmotionModel(PreTrainedModel):
             with torch.no_grad():
                 self.intensity_head.bias.fill_(intensity_prior)
 
-        self.metric_loss = SupConLoss()
+        self.metric_loss = losses.MultiSimilarityLoss(alpha=2, beta=5, base=0.4)
+        self.miner = MultiLabelEmotionMiner(overlap_threshold=0.15)
 
     def forward(
         self,
@@ -150,10 +175,11 @@ class EmotionModel(PreTrainedModel):
             attention_mask=attention_mask,
         )
 
-        pooled = outputs.last_hidden_state[:, 0]
+        mask = attention_mask.unsqueeze(-1).float()
+        pooled = (outputs.last_hidden_state * mask).sum(dim=1) / mask.sum(dim=1)
 
         emotion_features = F.gelu(self.emotion_projection(pooled))
-        intensity_features = F.gelu(self.intensity_projection(pooled.detach()))
+        intensity_features = F.gelu(self.intensity_projection(pooled))
 
         logits_emotion = self.emotion_head(emotion_features)
         logits_intensity = self.intensity_head(intensity_features)
@@ -206,34 +232,21 @@ class MultiLabelTrainer(Trainer):
 
         # https://github.com/KevinMusgrave/pytorch-metric-learning/issues/178#issuecomment-675611566
         # Prepare indices tuple for metric loss following the GitHub issue above (no native support for multi-label)
+        valid = labels.sum(dim=1) > 0
+        embeddings_emotion_valid = embeddings_emotion[valid]
+        labels_valid = labels[valid]
+
         with torch.no_grad():
-            non_neutral_mask = ~is_neutral_mask
-            label_sum = labels.sum(dim=1)
+            pairs = model.miner.mine(embeddings_emotion_valid, labels_valid)
 
-            # pairwise overlap ratio
-            shared = labels @ labels.t()
-            denom = torch.minimum(
-                label_sum.unsqueeze(1),
-                label_sum.unsqueeze(0),
+        if pairs is not None and embeddings_emotion_valid.size(0) > 3:
+            loss_metric = model.metric_loss(
+                embeddings_emotion_valid,
+                indices_tuple=pairs,
             )
-            overlap_ratio = shared / (denom + 1e-6)
+        else:
+            loss_metric = torch.tensor(0.0, device=embeddings_emotion.device)
 
-            non_neutral_pair = non_neutral_mask.unsqueeze(1) & non_neutral_mask.unsqueeze(0)
-            mixed_pair = is_neutral_mask.unsqueeze(1) ^ is_neutral_mask.unsqueeze(0)
-
-            pos_mask = (overlap_ratio >= 0.5) & non_neutral_pair
-            neg_mask = ((overlap_ratio < 0.2) & non_neutral_pair) | mixed_pair
-            pos_mask.fill_diagonal_(False)
-            neg_mask.fill_diagonal_(False)
-
-            pos_i, pos_j = pos_mask.nonzero(as_tuple=True)
-            neg_i, neg_j = neg_mask.nonzero(as_tuple=True)
-
-            indices_tuple = (pos_i, pos_j, neg_i, neg_j)
-        loss_metric = model.metric_loss(
-            embeddings_emotion,
-            indices_tuple=indices_tuple,
-        )
         w_int = cfg["training"]["lemotif"]["common"]["intensity_loss_weight"]
         w_met = cfg["training"]["lemotif"]["common"]["metric_loss_weight"]
 
@@ -306,7 +319,7 @@ def train_lemotif():
 
     pos_counts = labels.sum(dim=0)
     neg_counts = labels.shape[0] - pos_counts
-    pos_weight = (neg_counts / (pos_counts + 1e-5)).clamp(max=50.0)
+    pos_weight = (neg_counts / (pos_counts + 1e-5)).clamp(max=2.0)
     pos_weight_frozen = pos_weight.to(args_frozen.device)
 
     trainer_frozen = MultiLabelTrainer(

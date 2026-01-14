@@ -9,16 +9,13 @@ export type Emotion =
     | "Anticipation";
 
 export type RawEmotionResult = {
-    logits: Record<Emotion, number> | {};
-    deltas: Record<Emotion, number> | {};
+    emotions: Record<Emotion, number> | {};
     intensity: number;
-    dominance: number;
 };
 
 
 export type Analysis = {
     buckets: Record<Emotion, number>;
     intensity: number;
-    dominance: number;
     isOverridden: boolean;
 };

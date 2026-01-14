@@ -1,18 +1,17 @@
 import json
-import sys
 import numpy as np
 from pathlib import Path
 from ml.inference.classifier import EmotionClassifier
-from ml.utils.calibration import load_json_entries
 
 
-def sigmoid(x):
-    return 1 / (1 + np.exp(-x))
-
-
-def analyze_global_delta_distribution(json_path: str):
+def analyze_global_emotion_distribution():
     classifier = EmotionClassifier()
-    texts = load_json_entries(Path(json_path))
+    # Use validation split from load_and_split_lemotif, matching baselines.py
+    from ml.utils.data import load_and_split_lemotif
+
+    dataset_dict, _, _, _ = load_and_split_lemotif()
+    val_dataset = dataset_dict["validation"]
+    texts = val_dataset["text"]
 
     model_dir = Path(classifier.cfg["paths"]["artifacts_dir"]) / "final_model"
     baseline_path = model_dir / "baselines.json"
@@ -20,8 +19,8 @@ def analyze_global_delta_distribution(json_path: str):
     with open(baseline_path) as f:
         baselines = json.load(f)
 
-    all_deltas = []
-    deltas_by_label = {label: [] for label in classifier.labels}
+    all_zscores = []
+    zscores_by_label = {label: [] for label in classifier.labels}
     intensity_values = []
 
     for text in texts:
@@ -29,29 +28,28 @@ def analyze_global_delta_distribution(json_path: str):
 
         for idx, label in enumerate(classifier.labels):
             mean = baselines["emotion"][label]["mean"]
-            temp = baselines["emotion"][label].get("temp", 1.0)
+            std = baselines["emotion"][label]["std"]
             logit = logits_emotion[0, idx].item()
-
-            prob = sigmoid(logit / temp)
-            mean_prob = sigmoid(mean / temp)
-            delta = prob - mean_prob
-            all_deltas.append(delta)
-            deltas_by_label[label].append(delta)
+            z = (logit - mean) / std
+            all_zscores.append(z)
+            zscores_by_label[label].append(z)
 
         intensity_logit = logits_intensity[0, 0].item()
-        intensity_value = intensity_logit - baselines["intensity"]["mean"]
+        intensity_value = (intensity_logit - baselines["intensity"]["mean"]) / baselines[
+            "intensity"
+        ]["std"]
         intensity_values.append(intensity_value)
 
     stats = {
         "global": {
-            "mean": float(np.mean(all_deltas)),
-            "std": float(np.std(all_deltas)),
-            "median": float(np.median(all_deltas)),
+            "mean": float(np.mean(all_zscores)),
+            "std": float(np.std(all_zscores)),
+            "median": float(np.median(all_zscores)),
             "percentiles": {
-                "75": float(np.percentile(all_deltas, 75)),
-                "90": float(np.percentile(all_deltas, 90)),
-                "95": float(np.percentile(all_deltas, 95)),
-                "99": float(np.percentile(all_deltas, 99)),
+                "75": float(np.percentile(all_zscores, 75)),
+                "90": float(np.percentile(all_zscores, 90)),
+                "95": float(np.percentile(all_zscores, 95)),
+                "99": float(np.percentile(all_zscores, 99)),
             },
         },
         "intensity": {
@@ -59,6 +57,7 @@ def analyze_global_delta_distribution(json_path: str):
             "std": float(np.std(intensity_values)),
             "median": float(np.median(intensity_values)),
             "percentiles": {
+                "25": float(np.percentile(intensity_values, 25)),
                 "75": float(np.percentile(intensity_values, 75)),
                 "90": float(np.percentile(intensity_values, 90)),
                 "95": float(np.percentile(intensity_values, 95)),
@@ -68,19 +67,19 @@ def analyze_global_delta_distribution(json_path: str):
         "per_emotion": {},
     }
 
-    for label, deltas in deltas_by_label.items():
+    for label, zscores in zscores_by_label.items():
         stats["per_emotion"][label] = {
-            "mean": float(np.mean(deltas)),
-            "std": float(np.std(deltas)),
-            "median": float(np.median(deltas)),
-            "90th": float(np.percentile(deltas, 90)),
+            "mean": float(np.mean(zscores)),
+            "std": float(np.std(zscores)),
+            "median": float(np.median(zscores)),
+            "90th": float(np.percentile(zscores, 90)),
         }
 
     return stats
 
 
-def main(json_path: str):
-    stats = analyze_global_delta_distribution(json_path)
+def main():
+    stats = analyze_global_emotion_distribution()
 
     classifier = EmotionClassifier()
     model_dir = Path(classifier.cfg["paths"]["artifacts_dir"]) / "final_model"
@@ -92,7 +91,4 @@ def main(json_path: str):
 
 
 if __name__ == "__main__":
-    if len(sys.argv) < 2:
-        raise SystemExit("Usage: python thresholds.py <path_to_json>")
-
-    main(sys.argv[1])
+    main()

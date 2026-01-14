@@ -1,7 +1,7 @@
 import { type LucideIcon, Angry, Frown, Smile, Hourglass, HeartHandshake, HeartPulse, Meh, Bug, Eye } from "lucide-react";
 import type { Emotion } from "../types/types";
 
-export const EMOTIONS: Emotion[] = ["Joy", "Sadness", "Anger", "Fear", "Trust", "Disgust", "Surprise", "Anticipation"]
+export const EMOTIONS: Emotion[] = ["Joy", "Sadness", "Anger", "Fear", "Trust", "Disgust", "Surprise", "Anticipation"];
 
 export const EMOTION_ICONS: (emotion: Emotion) => LucideIcon = (emotion: Emotion) => {
     switch (emotion.toLowerCase()) {

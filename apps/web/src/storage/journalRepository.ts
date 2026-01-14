@@ -10,21 +10,19 @@ export async function createJournalEntry(
 ): Promise<number> {
     const now = Date.now();
     const buckets = Object.fromEntries(
-        buildEmotionBuckets(result.deltas, result.dominance, result.intensity)
+        buildEmotionBuckets(result.emotions, result.intensity)
             .map(b => [b.bucket as Emotion, b.score])
     );
     return db.entries.add({
         text,
         raw: {
-            logits: result.logits,
-            deltas: result.deltas,
+            emotions: result.emotions,
             intensity: result.intensity,
             modelVersion: "emotion-head-v1",
         },
         analysis: {
             buckets: buckets as Record<Emotion, number>,
             intensity: result.intensity,
-            dominance: result.dominance,
         },
         createdAt: now,
         updatedAt: now,

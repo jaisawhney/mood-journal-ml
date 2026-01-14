@@ -1,5 +1,5 @@
 model:
-  name: microsoft/MiniLM-L12-H384-uncased
+  name: nreimers/MiniLMv2-L12-H384-distilled-from-RoBERTa-Large # https://github.com/microsoft/unilm/tree/master/minilm
   max_length: 128
 
 paths:
@@ -10,7 +10,7 @@ training:
     learning_rate: 3e-5
     train_batch_size: 32
     eval_batch_size: 32
-    num_epochs: 5
+    num_epochs: 3
     weight_decay: 0.01
     seed: 42
     warmup_ratio: 0.05
@@ -22,11 +22,11 @@ training:
     common:
       train_batch_size: 32
       eval_batch_size: 32
-      weight_decay: 0.05
+      weight_decay: 0.01
       seed: 42
       gradient_accumulation_steps: 2
       intensity_loss_weight: 0.1
-      metric_loss_weight: 0.15
+      metric_loss_weight: 0.1
 
     frozen:
       learning_rate: 1e-4
@@ -37,13 +37,13 @@ training:
       lr_scheduler_type: linear
 
     unfrozen:
-      learning_rate: 2e-5
+      learning_rate: 5e-5
       num_epochs: 25
-      warmup_ratio: 0.15
+      warmup_ratio: 0.05
       early_stopping_patience: 4
       early_stopping_threshold: 0.001
       lr_scheduler_type: cosine
-      max_grad_norm: 0.5
+      max_grad_norm: 1.0
 
 evaluation:
   eval_batch_size: 128

@@ -32,7 +32,7 @@ export default function JournalPage() {
     return (
         <div className="page-container">
             <div className="page-content">
-                <PageHeader title="Journal" description="Write freely. We will reflect how you are feeling after." />
+                <PageHeader title="Journal" description="Write freely. Analysis stays on your device." />
                 {entry ? (
                     <JournalSummaryCard journalEntryId={journalEntryId} entry={entry} onClose={() => {
                         setJournalEntryId(null);

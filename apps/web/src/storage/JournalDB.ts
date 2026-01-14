@@ -4,7 +4,6 @@ import type { Emotion } from '../types/types';
 export type Analysis = {
     buckets: Record<Emotion, number>;
     intensity: number;
-    dominance: number;
 };
 
 export type UserOverride = {
@@ -15,8 +14,7 @@ export type UserOverride = {
 };
 
 export type RawEmotionOutput = {
-    logits: Record<string, number>;
-    deltas?: Record<string, number>;
+    emotions: Record<string, number>;
     intensity?: number;
     modelVersion: string;
 };
@@ -33,7 +31,6 @@ export interface JournalEntry {
     createdAt: number;
     updatedAt: number;
 }
-
 
 export class JournalDB extends Dexie {
     entries!: Table<JournalEntry, number>;

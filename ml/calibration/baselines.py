@@ -1,10 +1,8 @@
 import json
-import sys
 import torch
-
 from pathlib import Path
 from ml.inference.classifier import EmotionClassifier
-from ml.utils.calibration import load_json_entries
+from ml.utils.data import load_and_split_lemotif
 
 
 def compute_label_baselines(logits: torch.Tensor, labels: list[str]):
@@ -19,9 +17,11 @@ def compute_label_baselines(logits: torch.Tensor, labels: list[str]):
     }
 
 
-def main(json_path: str, batch_size: int = 32) -> None:
+def main(batch_size: int = 32) -> None:
     classifier = EmotionClassifier()
-    texts = load_json_entries(Path(json_path))
+    dataset_dict, _, _, _ = load_and_split_lemotif()
+    val_dataset = dataset_dict["validation"]
+    texts = val_dataset["text"]
 
     emotion_logits = []
     intensity_logits = []
@@ -39,6 +39,7 @@ def main(json_path: str, batch_size: int = 32) -> None:
         "emotion": label_baselines,
         "intensity": {
             "mean": intensity_tensor.mean().item(),
+            "std": intensity_tensor.std().item(),
             "min": intensity_tensor.min().item(),
             "max": intensity_tensor.max().item(),
         },
@@ -51,7 +52,4 @@ def main(json_path: str, batch_size: int = 32) -> None:
 
 
 if __name__ == "__main__":
-    if len(sys.argv) < 2:
-        raise SystemExit("Usage: python baselines.py <path_to_json>")
-
-    main(sys.argv[1])
+    main()

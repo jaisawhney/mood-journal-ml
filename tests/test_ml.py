@@ -8,7 +8,7 @@ import pytest
 from pathlib import Path
 from transformers import AutoConfig
 
-from ml.calibration import baselines, temperature
+from ml.calibration import baselines
 from ml.training.trainer import EmotionModel
 from ml.export import onnx
 from ml.utils.metrics import compute_metrics, compute_auc_metrics
@@ -37,11 +37,6 @@ def test_calibration_baselines_output():
             and "min" in label_baseline
             and "max" in label_baseline
         )
-    logits = torch.randn(20, 4)
-    labels = torch.randint(0, 2, (20, 4)).float()
-    temps = temperature.fit_per_label_temperature(logits, labels)
-    assert torch.all(temps > 0)
-    assert temps.shape[0] == logits.shape[1]
 
 
 def test_calibration_baselines_file_serialization():

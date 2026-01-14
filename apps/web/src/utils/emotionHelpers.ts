@@ -12,7 +12,7 @@ const NEGATIVE_LABELS = new Set([
 const VALENCE: Record<string, "positive" | "negative" | "neutral"> = {
     Joy: "positive",
     Trust: "positive",
-    Anticipation: "positive",
+    Anticipation: "neutral",
     Surprise: "neutral",
     Sadness: "negative",
     Fear: "negative",
@@ -21,11 +21,11 @@ const VALENCE: Record<string, "positive" | "negative" | "neutral"> = {
 };
 
 const EMOTION_MAP: Record<string, Set<string>> = {
-    "Joy": new Set(["happy", "satisfied", "proud", "nostalgic"]),
-    "Trust": new Set(["calm", "bored"]), // can't figure out where to put bored (neutral?)
+    "Joy": new Set(["happy", "satisfied", "proud"]),
+    "Trust": new Set(["calm"]),
     "Fear": new Set(["afraid", "anxious", "awkward"]),
     "Surprise": new Set(["surprised"]),
-    "Sadness": new Set(["sad", "jealous"]),
+    "Sadness": new Set(["sad", "jealous", "nostalgic"]),
     "Disgust": new Set(["disgusted", "ashamed"]),
     "Anger": new Set(["angry", "frustrated"]),
     "Anticipation": new Set(["excited"]),
@@ -37,25 +37,25 @@ export type BucketResult = {
 };
 
 export function calculateValenceMass(
-    deltas: Record<string, number>,
-    dominance: number
+    emotions: Record<string, number>,
 ): { positive: number; negative: number } {
     let positive = 0;
     let negative = 0;
-    for (const label in deltas) {
-        const norm = dominance > 0 ? deltas[label] / dominance : 0;
-        if (POSITIVE_LABELS.has(label)) positive += norm;
-        if (NEGATIVE_LABELS.has(label)) negative += norm;
+    for (const label in emotions) {
+        const z = emotions[label];
+        if (z > 0) {
+            if (POSITIVE_LABELS.has(label)) positive += z;
+            if (NEGATIVE_LABELS.has(label)) negative += z;
+        }
     }
     return { positive, negative };
 }
 
 export function buildEmotionBuckets(
-    emotionDeltas: Record<string, number>,
-    dominance: number,
+    emotions: Record<string, number>,
     intensity: number
 ): BucketResult[] {
-    const { positive, negative } = calculateValenceMass(emotionDeltas, dominance);
+    const { positive, negative } = calculateValenceMass(emotions);
     const margin = Math.abs(positive - negative);
     const MARGIN_THRESHOLD = 0.5;
 
@@ -71,13 +71,11 @@ export function buildEmotionBuckets(
     for (const [parent, subEmotions] of Object.entries(EMOTION_MAP)) {
         let bucketScore = 0;
         for (const subEmotion of subEmotions) {
-            const delta = emotionDeltas[subEmotion] || 0;
-            const norm = dominance > 0 ? delta / dominance : 0;
-            bucketScore += norm;
+            const z = emotions[subEmotion] || 0;
+            bucketScore = Math.max(bucketScore, z);
         }
 
         if (bucketScore > 0) {
-            const densityCorrectedScore = bucketScore / Math.sqrt(subEmotions.size); // sublinear correction
             const valence = VALENCE[parent];
 
             if (valence === "positive" && finalPositive === 0) continue;
@@ -85,7 +83,7 @@ export function buildEmotionBuckets(
 
             buckets.push({
                 bucket: parent,
-                score: densityCorrectedScore * intensity,
+                score: bucketScore * intensity,
             });
         }
 
@@ -93,16 +91,8 @@ export function buildEmotionBuckets(
     buckets.sort((a, b) => b.score - a.score);
 
     if (buckets.length === 0) return buckets;
-
-    const maxScore = buckets[0].score;
-    const RELATIVE_FLOOR = 0.4;
-
-    const filtered = buckets.filter(
-        b => b.score >= maxScore * RELATIVE_FLOOR
-    );
-
     const MAX_BUCKETS = 3;
-    return filtered.slice(0, MAX_BUCKETS);
+    return buckets.slice(0, MAX_BUCKETS);
 }
 
 
@@ -125,10 +115,9 @@ export function getAnalysis(entry: JournalEntry): Analysis {
             Trust: 0,
             Disgust: 0,
             Surprise: 0,
-            Anticipation: 0
+            Anticipation: 0,
         },
         intensity: 0,
-        dominance: 0,
         isOverridden: false
     };
 
@@ -138,7 +127,6 @@ export function getAnalysis(entry: JournalEntry): Analysis {
             ...(override?.buckets ?? entry.analysis.buckets),
         },
         intensity: override?.intensity ?? entry.analysis.intensity,
-        dominance: entry.analysis.dominance,
         isOverridden: Boolean(override),
     };
 }
@@ -153,6 +141,6 @@ export function normalizeToPercentile(
     const sorted = [...reference].sort((a, b) => a - b);
     const percentileIndex = Math.ceil(sorted.length * percentile) - 1;
     const cappedIndex = Math.max(0, Math.min(percentileIndex, sorted.length - 1));
-    const cap = sorted[cappedIndex] || 1;
+    const cap = sorted[cappedIndex] ?? 1;
     return values.map(v => Math.min(v / cap, 1));
 }
