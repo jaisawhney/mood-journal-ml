@@ -43,7 +43,7 @@ export default function JournalPage() {
                         onChange={e => setText(e.target.value)}
                         onSubmit={handleSubmit}
                         loading={loading}
-                        hardLimit={HARD_LIMIT} showHint={false} />
+                        hardLimit={HARD_LIMIT} showHint={text.length > 0 && text.length < 100} />
                 )}
                 <section className="card p-6 mt-6">
                     <h2 className="header">Your Privacy</h2>

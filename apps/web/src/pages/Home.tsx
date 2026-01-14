@@ -137,6 +137,3 @@ export default function Home() {
     </div>
   );
 }
-
-//TODO: Add CTA buttons for adding new entries
-// TODO: Add top 2-3 emotions summary based on recent entries to TodaySummary

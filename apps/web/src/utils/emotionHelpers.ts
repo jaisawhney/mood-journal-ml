@@ -2,7 +2,7 @@ import type { JournalEntry } from "../storage/JournalDB";
 import type { Analysis, Emotion } from "../types/types";
 
 const POSITIVE_LABELS = new Set([
-    "happy", "excited", "satisfied", "proud", "surprised"
+    "happy", "excited", "satisfied", "proud"
 ]);
 
 const NEGATIVE_LABELS = new Set([

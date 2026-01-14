@@ -7,7 +7,7 @@ env.allowRemoteModels = false;
 const MODEL_PATH = "/api/models/emotion-model/v1/";
 
 // TODO: use the api to fetch these calibration values from the server rather than hardcoding them here.
-const INTENSITY_Z_THRESHOLD = -0.75;
+const INTENSITY_Z_THRESHOLD = -1.0;
 const POWER_LAW_EXPONENT = 0.5;
 const CALIBRATION: Record<string, { baselineMean: number; baselineStd: number }> = {
     "afraid": { baselineMean: -4.427581787109375, baselineStd: 0.9185531139373779 },

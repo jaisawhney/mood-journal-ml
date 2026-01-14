@@ -39,7 +39,7 @@ export default function JournalForm({
                 <span>
                     {showHint && (
                         <span className="text-slate-500">
-                            Shorter entries often give clearer emotional insights.
+                            Longer entries often give clearer emotional insights.
                         </span>
                     )}
                 </span>

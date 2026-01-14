@@ -2,7 +2,7 @@
 import type { Emotion, RawEmotionResult } from "../types/types";
 import { buildEmotionBuckets } from "../utils/emotionHelpers";
 import { db } from "./JournalDB";
-import type { UserOverride } from "./JournalDB";
+import type { JournalEntry, UserOverride } from "./JournalDB";
 
 export async function createJournalEntry(
     text: string,
@@ -18,7 +18,7 @@ export async function createJournalEntry(
         raw: {
             emotions: result.emotions,
             intensity: result.intensity,
-            modelVersion: "emotion-head-v1",
+            modelVersion: "emotion-v1",
         },
         analysis: {
             buckets: buckets as Record<Emotion, number>,
@@ -42,6 +42,17 @@ export async function updateUserOverride(id: number, override: Partial<UserOverr
             updatedAt,
         },
         updatedAt,
+    });
+}
+
+export async function replaceAllEntries(entries: JournalEntry[]) {
+    if (!Array.isArray(entries) || entries.length === 0) return;
+
+    const toInsert = entries.map(({ id, ...rest }) => rest);
+
+    await db.transaction("rw", db.entries, async () => {
+        await db.entries.clear();
+        await db.entries.bulkAdd(toInsert);
     });
 }
 
