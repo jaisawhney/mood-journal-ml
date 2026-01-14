@@ -10,7 +10,7 @@ function Row({ index, style, entries, }: RowComponentProps<{ entries: JournalEnt
     const entry = entries[index];
 
     return (
-        <div style={style} className="pb-4 px-1 last:pb-0">
+        <div style={style} className="pb-4 last:pb-0">
             <HistoryCard entry={entry} />
         </div>
     );
@@ -26,7 +26,7 @@ export default function JournalHistoryPage() {
         <div className="page-container">
             <div className="page-content-lg">
                 <PageHeader
-                    title="Journal history"
+                    title="Journal History"
                     description="Review past entries and reflect more deeply when you want."
                 />
 

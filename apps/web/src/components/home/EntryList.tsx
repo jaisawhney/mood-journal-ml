@@ -12,7 +12,7 @@ function Row({ index, style, entries, }: RowComponentProps<{ entries: JournalEnt
     const entry = entries[index];
 
     return (
-        <div style={style} className="pb-4 px-1 last:pb-0">
+        <div style={style} className="pb-4 last:pb-0">
             <EntryCard entry={entry} />
         </div>
     );

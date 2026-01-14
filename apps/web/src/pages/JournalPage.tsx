@@ -1,5 +1,6 @@
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import PageHeader from "../components/ui/PageHeader"
+import { toast } from 'sonner';
 import useEmotionModel from "../hooks/useEmotionModel"
 import JournalSummaryCard from "../components/journal/JournalSummaryCard"
 import JournalForm from "../components/journal/JournalForm"
@@ -9,23 +10,32 @@ import { useJournalEntry } from "../hooks/useJournalEntries"
 const HARD_LIMIT = 2000
 
 export default function JournalPage() {
-    const { predict, loading } = useEmotionModel();
+    const { predict, loading, error } = useEmotionModel();
+    useEffect(() => {
+        if (error) {
+            toast.error("Something went wrong. Please try again.");
+        }
+    }, [error]);
     const [text, setText] = useState("");
     const [journalEntryId, setJournalEntryId] = useState<number | null>(null);
     const { entry } = useJournalEntry(journalEntryId ?? 0);
 
     async function handleSubmit(e: React.FormEvent) {
         e.preventDefault();
-        const trimmedText = text.trim();
-        if (!trimmedText) return;
+        try {
+            const trimmedText = text.trim();
+            if (!trimmedText) return;
 
-        const result = await predict(trimmedText);
-        if (!result) return;
+            const result = await predict(trimmedText);
+            if (!result) return;
 
-        const id = await createJournalEntry(trimmedText, result);
+            const id = await createJournalEntry(trimmedText, result);
 
-        setJournalEntryId(id);
-        setText("");
+            setJournalEntryId(id);
+            setText("");
+        } catch (error) {
+            console.error("Error creating journal entry:", error);
+        }
     }
 
 

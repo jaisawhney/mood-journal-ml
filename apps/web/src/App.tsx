@@ -5,8 +5,12 @@ import ErrorBoundary from './pages/ErrorBoundary';
 import { Toaster } from 'sonner';
 
 import Nav from './components/navigation/Nav'
-import PageLoading from './components/ui/PageLoading';
+import PageLoading from './pages/PageLoading';
 import NotFound from './pages/NotFound';
+import HomeSkeleton from './pages/HomeSkeleton';
+import SettingsSkeleton from './pages/SettingsSkeleton';
+import HistorySkeleton from './pages/HistorySkeleton';
+import JournalSkeleton from './pages/JournalPageSkeleton';
 
 const InsightsPage = lazy(() => import('./pages/Home'));
 const JournalPage = lazy(() => import('./pages/JournalPage'));
@@ -23,24 +27,32 @@ function App() {
           <Suspense fallback={<PageLoading />}>
             <Routes>
               <Route path='/' element={
-                <ErrorBoundary>
-                  <InsightsPage />
-                </ErrorBoundary>
+                <Suspense fallback={<HomeSkeleton />}>
+                  <ErrorBoundary>
+                    <InsightsPage />
+                  </ErrorBoundary>
+                </Suspense>
               } />
               <Route path='/journal' element={
-                <ErrorBoundary>
-                  <JournalPage />
-                </ErrorBoundary>
+                <Suspense fallback={<JournalSkeleton />}>
+                  <ErrorBoundary>
+                    <JournalPage />
+                  </ErrorBoundary>
+                </Suspense>
               } />
               <Route path='/entries' element={
-                <ErrorBoundary>
-                  <HistoryPage />
-                </ErrorBoundary>
+                <Suspense fallback={<HistorySkeleton />}>
+                  <ErrorBoundary>
+                    <HistoryPage />
+                  </ErrorBoundary>
+                </Suspense>
               } />
               <Route path='/settings' element={
-                <ErrorBoundary>
-                  <SettingsPage />
-                </ErrorBoundary>
+                <Suspense fallback={<SettingsSkeleton />}>
+                  <ErrorBoundary>
+                    <SettingsPage />
+                  </ErrorBoundary>
+                </Suspense>
               } />
               <Route path='*' element={
                 <ErrorBoundary>

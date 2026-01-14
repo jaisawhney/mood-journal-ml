@@ -74,7 +74,7 @@ function HistoryCard({ entry }: Props) {
                         </div>
                     )}
 
-                    <div className="rounded-lg bg-slate-50 p-3 space-y-2 dark:bg-transparent">
+                    <div className="rounded-lg bg-slate-50 p-3 space-y-2 transition-all ease-in-out dark:bg-transparent dark:p-0">
                         <p className="text-xs text-secondary">
                             Click to adjust
                         </p>
