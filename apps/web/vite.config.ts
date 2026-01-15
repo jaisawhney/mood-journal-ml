@@ -37,8 +37,8 @@ export default defineConfig({
         ],
       },
       manifest: {
-        name: 'Mood Tracker',
-        short_name: 'MoodTracker',
+        name: 'Mood Journal',
+        short_name: 'MoodJournal',
         description: 'Track your mood and insights offline.',
         theme_color: '#0ea5e9',
         background_color: '#0f172a',

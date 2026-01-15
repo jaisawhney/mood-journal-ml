@@ -3,29 +3,23 @@ import PageHeader from "../components/ui/PageHeader";
 import { Doughnut, Line } from "react-chartjs-2";
 import { Chart, ArcElement, Tooltip, Legend, CategoryScale, LinearScale, PointElement, LineElement, Filler, type TooltipItem } from "chart.js";
 import type { Emotion } from "../types/types";
-import { useJournalEntries } from "../hooks/useJournalEntries";
+import { useJournalEntriesForDays } from "../hooks/useJournalEntries";
 import { EMOTION_RGB_MAP, EMOTIONS } from "../constants/emotionMaps";
 import { chartXAxisTickCallback, chartYAxisTickCallback } from "../utils/chartUtils";
 import { useInsightStats } from "../hooks/useInsightStats";
+import DateRangeSelect from "../components/ui/DateRangeSelect";
+import { DATE_RANGES } from "../constants/chartConstants";
 
 Chart.register(ArcElement, Tooltip, Legend, CategoryScale, LinearScale, PointElement, LineElement, Filler);
 
-const RANGES = [
-    { label: "7d", days: 7 },
-    { label: "14d", days: 14 },
-    { label: "30d", days: 30 },
-    { label: "6m", days: 180 },
-    { label: "1y", days: 365 },
-];
-
 export default function InsightsPage() {
-    const { entries } = useJournalEntries();
     const [selectedEmotion, setSelectedEmotion] = useState<Emotion>("Joy");
-    const [range, setRange] = useState(RANGES[1]);
+    const [range, setRange] = useState(DATE_RANGES[1]);
 
+    const { entries } = useJournalEntriesForDays(range.days);
     const { labels, series, percentages, dominantEmotion, activeDays, totalEntries } = useInsightStats(entries, range.days);
 
-    const isEmpty = activeDays === 0;
+    const isEmpty = activeDays === 0 || Object.values(percentages).every(p => p === 0);
     const doughnutData = isEmpty ? {
         labels: ["No data"],
         datasets: [{
@@ -76,7 +70,7 @@ export default function InsightsPage() {
             fill: true,
             tension: 0.5,
             borderWidth: 1.2,
-            pointRadius: 0,
+            pointRadius: 1,
             borderColor: `rgba(${EMOTION_RGB_MAP[selectedEmotion]}, 1)`,
             backgroundColor: `rgba(${EMOTION_RGB_MAP[selectedEmotion]},0.15)`,
         }],
@@ -113,23 +107,11 @@ export default function InsightsPage() {
             <div className="page-content-wide md:space-y-10 space-y-5">
                 <PageHeader title="Insights" description="Patterns and themes from your recent entries" />
 
-                <section className="flex items-center gap-2">
-                    <span className="text-secondary">Date range</span>
-                    <select
-                        aria-label="Select date range"
-                        value={range.label}
-                        onChange={e =>
-                            setRange(RANGES.find(r => r.label === e.target.value) ?? range)
-                        }
-                        className="select-input dark:!bg-neutral-800"
-                    >
-                        {RANGES.map(r => (
-                            <option key={r.label} value={r.label}>
-                                {r.label}
-                            </option>
-                        ))}
-                    </select>
-                </section>
+                <DateRangeSelect
+                    value={range.label}
+                    ranges={DATE_RANGES}
+                    onChange={label => setRange(DATE_RANGES.find(r => r.label === label) ?? range)}
+                />
 
                 <section
                     className="grid grid-cols-1 sm:grid-cols-3 gap-3"

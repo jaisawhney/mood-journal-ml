@@ -73,7 +73,6 @@ export function useInsightStats(entries: JournalEntry[], days: number): InsightS
             entriesInRange += dayEntries.length;
         });
 
-
         EMOTIONS.forEach(emotion => {
             series[emotion] = normalizeToPercentile(rawSeries[emotion]);
         });

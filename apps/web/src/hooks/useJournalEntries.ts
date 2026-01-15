@@ -1,5 +1,6 @@
 import { useLiveQuery } from "dexie-react-hooks";
 import { db } from "../storage/JournalDB";
+import { useMemo } from "react";
 
 export function useJournalEntries(start?: Date, end?: Date) {
     const startTimestamp = start?.getTime();
@@ -30,4 +31,14 @@ export function useJournalEntry(id: number) {
         entry,
         loading: entry === undefined,
     };
+}
+
+export function useJournalEntriesForDays(days: number) {
+    const cutoff = useMemo(() => {
+        const date = new Date();
+        date.setDate(date.getDate() - days + 1);
+        return date;
+    }, [days]);
+    const { entries, loading } = useJournalEntries(cutoff);
+    return { entries, loading };
 }

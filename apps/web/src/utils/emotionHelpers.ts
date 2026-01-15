@@ -31,10 +31,20 @@ const EMOTION_MAP: Record<string, Set<string>> = {
     "Anticipation": new Set(["excited"]),
 };
 
+const SOFT_CAP = 1.5;
+const OVERRIDE_BLEND_ALPHA = 0.6;
+const OVERRIDE_LINEAR_DROP = 0.2;
+
 export type BucketResult = {
     bucket: string;
     score: number;
 };
+
+export function liftIntensity(intensity: number): number {
+    // apply a Softplus  to intensity values to avoid very low weights contributing nothing
+    const soft = Math.log1p(Math.exp(intensity)) / Math.log1p(Math.exp(SOFT_CAP));
+    return Math.min(soft, 1);
+}
 
 export function calculateValenceMass(
     emotions: Record<string, number>,
@@ -42,10 +52,10 @@ export function calculateValenceMass(
     let positive = 0;
     let negative = 0;
     for (const label in emotions) {
-        const z = emotions[label];
-        if (z > 0) {
-            if (POSITIVE_LABELS.has(label)) positive += z;
-            if (NEGATIVE_LABELS.has(label)) negative += z;
+        const emotionValue = emotions[label];
+        if (emotionValue > 0) {
+            if (POSITIVE_LABELS.has(label)) positive += emotionValue;
+            if (NEGATIVE_LABELS.has(label)) negative += emotionValue;
         }
     }
     return { positive, negative };
@@ -66,30 +76,40 @@ export function buildEmotionBuckets(
         else finalPositive = 0;
     }
 
-    const buckets: BucketResult[] = [];
+    // Rebase intensity using liftIntensity, drop if intensity <= 0
+    const rebasedIntensity = intensity > 0 ? liftIntensity(intensity) : 0;
+    if (rebasedIntensity === 0) return [];
 
+    const rawScores: { bucket: string; score: number; valence: string }[] = [];
     for (const [parent, subEmotions] of Object.entries(EMOTION_MAP)) {
         let bucketScore = 0;
         for (const subEmotion of subEmotions) {
-            const z = emotions[subEmotion] || 0;
-            bucketScore = Math.max(bucketScore, z);
+            const emotionValue = emotions[subEmotion] || 0;
+            bucketScore = Math.max(bucketScore, emotionValue);
         }
-
         if (bucketScore > 0) {
             const valence = VALENCE[parent];
-
             if (valence === "positive" && finalPositive === 0) continue;
             if (valence === "negative" && finalNegative === 0) continue;
-
-            buckets.push({
-                bucket: parent,
-                score: bucketScore * intensity,
-            });
+            rawScores.push({ bucket: parent, score: bucketScore * rebasedIntensity, valence });
         }
-
     }
-    buckets.sort((a, b) => b.score - a.score);
 
+    if (rawScores.length === 0) return [];
+    const scores = rawScores.map(b => b.score);
+    const min = Math.min(...scores);
+    const max = Math.max(...scores);
+    const range = max - min || 1;
+
+    const buckets: BucketResult[] = rawScores.map(({ bucket, score }) => ({
+        bucket,
+        score: (score - min) / range,
+    }));
+
+    buckets.sort((a, b) => b.score - a.score);
+    if (buckets.length > 1) {
+        buckets.pop(); // remove lowest bucket
+    }
     return buckets;
 }
 
@@ -131,16 +151,19 @@ export function getAnalysis(entry: JournalEntry): Analysis {
 
 export function getOverrideBuckets(entry: JournalEntry, emotions: Emotion[]): Partial<Record<Emotion, number>> {
     const buckets: Partial<Record<Emotion, number>> = {};
+    const intensity: number = liftIntensity(entry.analysis.intensity);
+    const modelBuckets = entry.analysis.buckets;
+
     for (const [idx, emotion] of emotions.entries()) {
         const existingValue = entry?.userOverride?.buckets?.[emotion];
         if (existingValue !== undefined) {
             buckets[emotion] = existingValue;
             continue;
         }
-
-        // decay weight based on position
-        const weight = 1 / (idx + 1);
-        buckets[emotion] = Math.max(entry.analysis.intensity, 0) * weight;
+        const overrideStrength = Math.max(1 - OVERRIDE_LINEAR_DROP * idx, 0);
+        const overrideValue = intensity * overrideStrength;
+        const modelValue = modelBuckets[emotion] || 0;
+        buckets[emotion] = OVERRIDE_BLEND_ALPHA * overrideValue + (1 - OVERRIDE_BLEND_ALPHA) * modelValue;
     }
     return buckets;
 }

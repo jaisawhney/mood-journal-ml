@@ -1,9 +1,12 @@
 import PageHeader from "../components/ui/PageHeader";
 import HistoryCard from "../components/history/HistoryCard";
 import { EmptyStateCard } from "../components/ui/EmptyStateCard";
-import { useJournalEntries } from "../hooks/useJournalEntries";
+import { useJournalEntriesForDays } from "../hooks/useJournalEntries";
 import { List, useDynamicRowHeight, type RowComponentProps, } from "react-window";
 import type { JournalEntry } from "../storage/JournalDB";
+import { useState } from "react";
+import { DATE_RANGES } from "../constants/chartConstants";
+import DateRangeSelect from "../components/ui/DateRangeSelect";
 
 
 function Row({ index, style, entries, }: RowComponentProps<{ entries: JournalEntry[] }>) {
@@ -17,7 +20,9 @@ function Row({ index, style, entries, }: RowComponentProps<{ entries: JournalEnt
 }
 
 export default function JournalHistoryPage() {
-    const { entries, loading } = useJournalEntries();
+    const [range, setRange] = useState(DATE_RANGES[1]);
+    const { entries, loading } = useJournalEntriesForDays(range.days);
+
     const rowHeight = useDynamicRowHeight({
         defaultRowHeight: 750
     });
@@ -28,6 +33,12 @@ export default function JournalHistoryPage() {
                 <PageHeader
                     title="Journal History"
                     description="Review past entries and reflect more deeply when you want."
+                />
+
+                <DateRangeSelect
+                    value={range.label}
+                    ranges={DATE_RANGES}
+                    onChange={label => setRange(DATE_RANGES.find(r => r.label === label) ?? range)}
                 />
 
                 {!loading && entries.length !== 0 ? (

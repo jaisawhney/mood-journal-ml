@@ -10,6 +10,7 @@ import { getAnalysis, getOverrideBuckets, getPrimaryEmotion } from "../../utils/
 import { getDisplayBuckets } from "../../storage/journalRepository";
 import type { Analysis, Emotion } from "../../types/types";
 import type { JournalEntry } from "../../storage/JournalDB";
+import { MAX_BUCKETS } from "../../constants/chartConstants";
 
 type Props = {
     entry: JournalEntry;
@@ -28,6 +29,10 @@ function HistoryCard({ entry }: Props) {
         const buckets = getOverrideBuckets(entry, emotions);
         await updateUserOverride(journalEntryId, { buckets });
     }
+
+    const insightPairs = Object.entries(analysis.buckets)
+        .sort((a, b) => (b[1] ?? 0) - (a[1] ?? 0))
+        .slice(0, MAX_BUCKETS);
 
     return (
         <div className="card p-5 space-y-4">
@@ -70,8 +75,28 @@ function HistoryCard({ entry }: Props) {
                             Emotions adjusted by you
                         </div>
                     )}
+                    <div className="rounded-md bg-slate-50 px-3 py-2 text-xs text-slate-600 dark:bg-neutral-900">
+                        <p className="text-slate-400 mb-1">Used in insights as</p>
 
-                    <div className="rounded-lg bg-slate-50 p-3 space-y-2 transition-all ease-in-out dark:bg-transparent dark:p-0">
+                        <div className="flex flex-wrap gap-2">
+                            {insightPairs.map(([emotion], idx) => (
+                                <span
+                                    key={emotion}
+                                    className={classNames(
+                                        "inline-flex items-center gap-1 rounded-full px-2 py-0.5 font-medium",
+                                        getEmotionColor(emotion as Emotion)
+                                    )}
+                                >
+                                    <EmotionIcon emotion={emotion as Emotion} size={12} />
+                                    {emotion}
+                                    <span className="opacity-70">
+                                        #{idx + 1}
+                                    </span>
+                                </span>
+                            ))}
+                        </div>
+                    </div>
+                    <div className="rounded-lg bg-slate-50 p-3 space-y-2 transition-all ease-in-out dark:bg-neutral-900">
                         <p className="text-xs text-secondary">
                             Click to adjust
                         </p>

@@ -1,7 +1,7 @@
 
 import type { Emotion, RawEmotionResult } from "../types/types";
 import { buildEmotionBuckets } from "../utils/emotionHelpers";
-import { MAX_BUCKETS } from "../constants/maxBuckets";
+import { MAX_BUCKETS } from "../constants/chartConstants";
 import { db } from "./JournalDB";
 import type { JournalEntry, UserOverride } from "./JournalDB";
 

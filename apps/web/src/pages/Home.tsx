@@ -1,12 +1,11 @@
 import { Line } from "react-chartjs-2";
 import { Chart, CategoryScale, LinearScale, PointElement, LineElement, Tooltip, Legend, Filler } from "chart.js";
-import { useLiveQuery } from "dexie-react-hooks";
 import PageHeader from "../components/ui/PageHeader";
 import { EntryList } from "../components/home/EntryList";
 import TodaySummary from "../components/home/TodaySummary";
-import { db } from "../storage/JournalDB";
 import { useInsightStats } from "../hooks/useInsightStats";
 import { chartXAxisTickCallback, chartYAxisTickCallback } from "../utils/chartUtils";
+import { useJournalEntriesForDays } from "../hooks/useJournalEntries";
 Chart.register(CategoryScale, LinearScale, PointElement, LineElement, Tooltip, Legend, Filler);
 
 const HISTORY_DAYS = 14;
@@ -41,12 +40,8 @@ const chartOptions = {
 };
 
 export default function Home() {
-  const recentEntries = useLiveQuery(() => {
-    const cutoff = new Date();
-    cutoff.setDate(cutoff.getDate() - HISTORY_DAYS + 1);
-    return db.entries.where("createdAt").aboveOrEqual(cutoff.getTime()).reverse().toArray();
-  }, []) ?? [];
-
+  console.log("Home component rendered");
+  const { entries: recentEntries } = useJournalEntriesForDays(HISTORY_DAYS);
   const { overallSeries, dominantEmotion, labels } = useInsightStats(recentEntries, HISTORY_DAYS);
   const chartData = {
     labels: labels,

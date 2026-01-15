@@ -1,4 +1,3 @@
-import React from "react";
 import classNames from "classnames";
 import EmotionIcon from "../ui/EmotionIcon";
 import { getEmotionColor } from "../../constants/emotionMaps";
@@ -9,7 +8,7 @@ type Props = {
     primaryEmotion: Emotion | null;
 };
 
-function TodaySummary({ entriesCount, primaryEmotion }: Props) {
+export default function TodaySummary({ entriesCount, primaryEmotion }: Props) {
     const hasEntries = entriesCount > 0;
     return (
         <section className={classNames("card", "flex items-center justify-between gap-6 p-6")}>
@@ -34,5 +33,3 @@ function TodaySummary({ entriesCount, primaryEmotion }: Props) {
         </section>
     );
 }
-
-export default React.memo(TodaySummary);
