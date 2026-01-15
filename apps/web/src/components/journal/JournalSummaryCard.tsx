@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { EmotionOverride } from "../ui/EmotionOverride";
-import { getAnalysis, getPrimaryEmotion } from "../../utils/emotionHelpers";
+import { getAnalysis, getOverrideBuckets, getPrimaryEmotion } from "../../utils/emotionHelpers";
 import { getDisplayBuckets } from "../../storage/journalRepository";
 import { updateUserOverride } from "../../storage/journalRepository";
 import type { Emotion } from "../../types/types";
@@ -22,13 +22,7 @@ export default function JournalSummaryCard({ journalEntryId, entry, onClose }: P
 
     async function updateEmotions(emotions: Emotion[]) {
         if (journalEntryId === null) return;
-
-        const buckets: Partial<Record<Emotion, number>> = {};
-
-        for (const emotion of emotions) {
-            buckets[emotion] = analysis.buckets[emotion] ?? 1;
-        }
-
+        const buckets = getOverrideBuckets(entry, emotions);
         updateUserOverride(journalEntryId, { buckets });
     }
 

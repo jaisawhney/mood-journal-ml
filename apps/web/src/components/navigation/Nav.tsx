@@ -1,4 +1,4 @@
-import { History, NotebookPen, Smile } from "lucide-react";
+import { ChartPie, History, NotebookPen, Smile } from "lucide-react";
 import { Link } from "react-router-dom";
 import DesktopNavItem from "./DesktopNavItem";
 import MobileNavItem from "./MobileNavItem";
@@ -13,6 +13,7 @@ const navLinks: NavLink[] = [
     { to: "/", label: "Insights", icon: Smile },
     { to: "/journal", label: "Journal", icon: NotebookPen },
     { to: "/entries", label: "History", icon: History },
+    { to: "/insights", label: "Insights", icon: ChartPie },
 ];
 
 export default function Nav() {

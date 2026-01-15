@@ -146,6 +146,14 @@
     }
   }
 
+  .select-input {
+    @apply rounded-md bg-white border border-slate-200 bg-white px-3 py-1 text-sm;
+
+    @variant dark {
+      @apply bg-neutral-900 border-none text-neutral-200;
+    }
+  }
+
   /* Navigation */
   .nav-desktop {
     @apply hidden md:flex fixed left-0 top-0 h-screen w-56 bg-white border-r border-neutral-200 shadow-sm z-30 flex-col;

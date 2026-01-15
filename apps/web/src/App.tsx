@@ -11,11 +11,13 @@ import HomeSkeleton from './pages/HomeSkeleton';
 import SettingsSkeleton from './pages/SettingsSkeleton';
 import HistorySkeleton from './pages/HistorySkeleton';
 import JournalSkeleton from './pages/JournalPageSkeleton';
+import InsightsSkeleton from './pages/InsightsPageSkeleton';
 
-const InsightsPage = lazy(() => import('./pages/Home'));
+const HomePage = lazy(() => import('./pages/Home'));
 const JournalPage = lazy(() => import('./pages/JournalPage'));
 const HistoryPage = lazy(() => import('./pages/HistoryPage'));
 const SettingsPage = lazy(() => import('./pages/Settings'));
+const InsightsPage = lazy(() => import('./pages/InsightsPage'));
 
 function App() {
   return (
@@ -29,7 +31,7 @@ function App() {
               <Route path='/' element={
                 <Suspense fallback={<HomeSkeleton />}>
                   <ErrorBoundary>
-                    <InsightsPage />
+                    <HomePage />
                   </ErrorBoundary>
                 </Suspense>
               } />
@@ -51,6 +53,13 @@ function App() {
                 <Suspense fallback={<SettingsSkeleton />}>
                   <ErrorBoundary>
                     <SettingsPage />
+                  </ErrorBoundary>
+                </Suspense>
+              } />
+              <Route path='/insights' element={
+                <Suspense fallback={<InsightsSkeleton />}>
+                  <ErrorBoundary>
+                    <InsightsPage />
                   </ErrorBoundary>
                 </Suspense>
               } />

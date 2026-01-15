@@ -29,7 +29,7 @@ export default defineConfig({
       filename: 'sw.js',
       registerType: 'autoUpdate',
       injectRegister: 'inline',
-      includeAssets: ['vite.svg'],
+      includeAssets: ['favicon.ico', 'robots.txt', 'images/icons/*.png'],
       injectManifest: {
         globIgnores: [
           '**/*.wasm',
@@ -49,16 +49,22 @@ export default defineConfig({
         lang: 'en-US',
         icons: [
           {
-            src: '/vite.svg',
-            sizes: 'any',
-            type: 'image/svg+xml',
+            src: '/images/icons/192x192.png',
+            sizes: '192x192',
+            type: 'image/png',
             purpose: 'any',
           },
           {
-            src: '/vite.svg',
-            sizes: 'any',
-            type: 'image/svg+xml',
-            purpose: 'maskable',
+            src: '/images/icons/512x512.png',
+            sizes: '512x512',
+            type: 'image/png',
+            purpose: 'any',
+          },
+          {
+            src: '/images/icons/apple-touch-icon.png',
+            sizes: '180x180',
+            type: 'image/png',
+            purpose: 'any',
           },
         ],
       },

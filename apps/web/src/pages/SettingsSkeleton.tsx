@@ -1,15 +1,11 @@
-import PageHeader from "../components/ui/PageHeader";
-
+import Skeleton from "../components/ui/Skeleton";
 function CardSkeleton({ lines = 2 }: { lines?: number }) {
     return (
         <section className="card p-6 space-y-3">
-            <div className="h-4 w-1/4 rounded bg-slate-200 dark:bg-slate-700" />
+            <Skeleton className="h-4 w-1/4" />
             <div className="space-y-2">
                 {Array.from({ length: lines }).map((_, i) => (
-                    <div
-                        key={i}
-                        className="h-3 w-full rounded bg-slate-200 dark:bg-slate-700"
-                    />
+                    <Skeleton key={i} className="h-3 w-full" />
                 ))}
             </div>
         </section>
@@ -20,10 +16,10 @@ function RowSkeleton() {
     return (
         <div className="flex items-center justify-between gap-4">
             <div className="space-y-2 w-full">
-                <div className="h-3 w-1/3 rounded bg-slate-200 dark:bg-slate-700" />
-                <div className="h-3 w-2/3 rounded bg-slate-200 dark:bg-slate-700" />
+                <Skeleton className="h-3 w-1/3" />
+                <Skeleton className="h-3 w-2/3" />
             </div>
-            <div className="h-8 w-24 rounded bg-slate-200 dark:bg-slate-700" />
+            <Skeleton className="h-8 w-24" />
         </div>
     );
 }
@@ -32,23 +28,22 @@ export default function SettingsSkeleton() {
     return (
         <div className="page-container">
             <div className="page-content">
-                <PageHeader
-                    title="Settings"
-                    description="Manage your data and how this app works on your device"
-                    hideSettings
-                />
+                <div className="space-y-2">
+                    <Skeleton className="h-7 w-40" />
+                    <Skeleton className="h-4 w-64" />
+                </div>
 
                 <CardSkeleton lines={2} />
 
                 <section className="card p-6 space-y-4">
-                    <div className="h-4 w-1/4 rounded bg-slate-200 dark:bg-slate-700" />
+                    <Skeleton className="h-4 w-1/4" />
                     <RowSkeleton />
                 </section>
 
                 <CardSkeleton lines={2} />
 
                 <section className="card p-4">
-                    <div className="h-4 w-1/4 rounded bg-slate-200 dark:bg-slate-700" />
+                    <Skeleton className="h-4 w-1/4" />
                     <div className="mt-4 space-y-4">
                         <RowSkeleton />
                         <RowSkeleton />

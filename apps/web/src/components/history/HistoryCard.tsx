@@ -6,7 +6,7 @@ import { EmotionOverride } from "../ui/EmotionOverride";
 import { getEmotionColor } from "../../constants/emotionMaps";
 import { formatDate } from "../../utils/date";
 import { updateUserOverride } from "../../storage/journalRepository";
-import { getAnalysis, getPrimaryEmotion } from "../../utils/emotionHelpers";
+import { getAnalysis, getOverrideBuckets, getPrimaryEmotion } from "../../utils/emotionHelpers";
 import { getDisplayBuckets } from "../../storage/journalRepository";
 import type { Analysis, Emotion } from "../../types/types";
 import type { JournalEntry } from "../../storage/JournalDB";
@@ -25,10 +25,7 @@ function HistoryCard({ entry }: Props) {
     const primaryEmotion = getPrimaryEmotion(Object.fromEntries(displayBuckets));
 
     async function updateEmotions(emotions: Emotion[]) {
-        const buckets: Partial<Record<Emotion, number>> = {};
-        for (const emotion of emotions) {
-            buckets[emotion] = analysis.buckets[emotion] ?? 1;
-        }
+        const buckets = getOverrideBuckets(entry, emotions);
         await updateUserOverride(journalEntryId, { buckets });
     }
 

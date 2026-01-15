@@ -129,16 +129,18 @@ export function getAnalysis(entry: JournalEntry): Analysis {
     };
 }
 
-export function normalizeToPercentile(
-    values: number[],
-    reference: number[],
-    percentile: number = 0.9
-): number[] {
-    if (!reference.length) return values.map(() => 0);
+export function getOverrideBuckets(entry: JournalEntry, emotions: Emotion[]): Partial<Record<Emotion, number>> {
+    const buckets: Partial<Record<Emotion, number>> = {};
+    for (const [idx, emotion] of emotions.entries()) {
+        const existingValue = entry?.userOverride?.buckets?.[emotion];
+        if (existingValue !== undefined) {
+            buckets[emotion] = existingValue;
+            continue;
+        }
 
-    const sorted = [...reference].sort((a, b) => a - b);
-    const percentileIndex = Math.ceil(sorted.length * percentile) - 1;
-    const cappedIndex = Math.max(0, Math.min(percentileIndex, sorted.length - 1));
-    const cap = sorted[cappedIndex] ?? 1;
-    return values.map(v => Math.min(v / cap, 1) || 0);
+        // decay weight based on position
+        const weight = 1 / (idx + 1);
+        buckets[emotion] = Math.max(entry.analysis.intensity, 0) * weight;
+    }
+    return buckets;
 }
