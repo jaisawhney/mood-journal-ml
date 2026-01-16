@@ -13,6 +13,6 @@ type Props = {
 
 function EmotionIcon({ emotion, className, size = 24 }: Props) {
     const Icon = emotion ? EMOTION_ICONS(emotion) : Meh;
-    return <Icon size={size} className={classNames("inline-block", className)} />;
+    return <Icon size={size} className={classNames("inline-block", className)} aria-hidden="true" focusable="false" />;
 }
 export default React.memo(EmotionIcon);

@@ -10,7 +10,7 @@ interface NavLink {
 }
 
 const navLinks: NavLink[] = [
-    { to: "/", label: "Insights", icon: Smile },
+    { to: "/", label: "Home", icon: Smile },
     { to: "/journal", label: "Journal", icon: NotebookPen },
     { to: "/entries", label: "History", icon: History },
     { to: "/insights", label: "Insights", icon: ChartPie },

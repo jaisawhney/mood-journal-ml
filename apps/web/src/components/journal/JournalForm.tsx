@@ -33,7 +33,6 @@ export default function JournalForm({
                 maxLength={hardLimit}
                 placeholder="Start writing..."
                 className="form-input"
-                autoFocus
                 aria-label="Journal entry text area"
             />
             <div className="flex justify-between items-center text-xs text-slate-400">
@@ -44,8 +43,8 @@ export default function JournalForm({
                         </span>
                     )}
                 </span>
-                <span className={text.length >= hardLimit ? "text-red-500" : "text-secondary"}>
-                    {text.length}/{hardLimit}
+                <span className={text.trim().length >= hardLimit ? "text-red-500" : "text-secondary"}>
+                    {text.trim().length}/{hardLimit}
                 </span>
             </div>
             <div className="flex items-center justify-end pt-2">

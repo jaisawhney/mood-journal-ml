@@ -20,6 +20,7 @@ const SettingsPage = lazy(() => import('./pages/Settings'));
 const InsightsPage = lazy(() => import('./pages/InsightsPage'));
 
 function App() {
+
   return (
     <Router>
       <Toaster position="bottom-right" richColors />

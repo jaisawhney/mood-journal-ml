@@ -146,6 +146,10 @@
     }
   }
 
+  .btn-hover-effects {
+    @apply transform duration-100 active:scale-95 hover:scale-105 motion-reduce:transform-none;
+  }
+
   .select-input {
     @apply rounded-md bg-white border border-slate-200 bg-white px-3 py-1 text-sm;
 

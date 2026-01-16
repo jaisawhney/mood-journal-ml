@@ -175,7 +175,7 @@ export default function InsightsPage() {
                     <div className="h-[180px]">
                         <Line data={lineData} options={lineOptions} />
                     </div>
-                    <p className="text-secondary">Relative intensity of <b>{selectedEmotion.toLowerCase()}</b> over time.</p>
+                    <p className="text-secondary">Relative intensity of <strong>{selectedEmotion.toLowerCase()}</strong> over time.</p>
                 </section>
             </div>
         </div>

@@ -7,6 +7,7 @@ import type { JournalEntry } from "../storage/JournalDB";
 import { useState } from "react";
 import { DATE_RANGES } from "../constants/chartConstants";
 import DateRangeSelect from "../components/ui/DateRangeSelect";
+import { AnimatePresence, motion } from "framer-motion";
 
 
 function Row({ index, style, entries, }: RowComponentProps<{ entries: JournalEntry[] }>) {
@@ -47,14 +48,24 @@ export default function JournalHistoryPage() {
                             <h2 className="header">All entries</h2>
                         </div>
 
-                        <div className="grid gap-4">
-                            <List
-                                rowComponent={Row}
-                                rowCount={entries.length}
-                                rowHeight={rowHeight}
-                                rowProps={{ entries }}
-                            />
-                        </div>
+                        <AnimatePresence initial={false} mode="wait">
+                            <motion.div
+                                key={range.label}
+                                initial={{ opacity: 0, y: -5 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                exit={{ opacity: 0, y: 5 }}
+                                transition={{ duration: 0.15 }}
+                                className="grid gap-4"
+                            >
+                                <List
+                                    role="list"
+                                    rowComponent={Row}
+                                    rowCount={entries.length}
+                                    rowHeight={rowHeight}
+                                    rowProps={{ entries }}
+                                />
+                            </motion.div>
+                        </AnimatePresence>
                     </section>
                 ) : !loading ? (
                     <EmptyStateCard

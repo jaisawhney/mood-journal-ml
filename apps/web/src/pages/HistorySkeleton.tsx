@@ -21,6 +21,11 @@ export default function HistorySkeleton() {
                     <Skeleton className="h-4 w-64" />
                 </div>
 
+                <div className="flex items-center gap-2">
+                    <Skeleton className="h-4 w-20" />
+                    <Skeleton className="h-9 w-20 rounded-md" />
+                </div>
+
                 <section className="space-y-4">
                     <div className="px-1">
                         <Skeleton className="h-7 w-32" />

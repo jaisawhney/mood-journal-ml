@@ -7,11 +7,10 @@ import type { Emotion } from "../../types/types";
 interface EmotionOverrideProps {
     value: Emotion[];
     onChange: (emotions: Emotion[]) => void;
-    disabled?: boolean;
     size?: "sm" | "md";
 }
 
-export const EmotionOverride: React.FC<EmotionOverrideProps> = ({ value, onChange, disabled, size = "md" }) => {
+export const EmotionOverride: React.FC<EmotionOverrideProps> = ({ value, onChange, size = "md" }) => {
     function toggleEmotion(emotion: Emotion) {
         if (value.includes(emotion)) {
             onChange(value.filter(e => e !== emotion));
@@ -29,11 +28,10 @@ export const EmotionOverride: React.FC<EmotionOverrideProps> = ({ value, onChang
                         type="button"
                         onClick={() => toggleEmotion(item as Emotion)}
                         className={classNames(
-                            "mood-badge mood-badge-text font-medium transition cursor-pointer",
+                            "mood-badge mood-badge-text font-medium transition cursor-pointer btn-hover-effects",
                             size === "sm" ? "px-3 py-1.5 text-xs" : "px-4 py-2 text-sm",
-                            selected ? getEmotionColor(item as Emotion) : "bg-slate-100 hover:bg-slate-200 dark:bg-neutral-600 dark:hover:bg-neutral-700",
+                            selected ? getEmotionColor(item as Emotion) : "bg-slate-100 hover:bg-slate-200 dark:bg-neutral-600 dark:hover:bg-neutral-700"
                         )}
-                        disabled={disabled}
                     >
                         <EmotionIcon emotion={item as Emotion} size={16} />
                         <span className="capitalize">{item}</span>

@@ -33,6 +33,7 @@ export function EntryList({ entries }: Props) {
                     </div>
 
                     <List
+                        role="list"
                         rowComponent={Row}
                         rowCount={entries.length}
                         rowHeight={rowHeight}

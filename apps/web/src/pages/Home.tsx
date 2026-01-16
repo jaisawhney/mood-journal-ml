@@ -40,7 +40,6 @@ const chartOptions = {
 };
 
 export default function Home() {
-  console.log("Home component rendered");
   const { entries: recentEntries } = useJournalEntriesForDays(HISTORY_DAYS);
   const { overallSeries, dominantEmotion, labels } = useInsightStats(recentEntries, HISTORY_DAYS);
   const chartData = {
@@ -58,7 +57,6 @@ export default function Home() {
       },
     ],
   };
-
   return (
     <div className="page-container">
       <div className="page-content-wide md:space-y-10 space-y-5">

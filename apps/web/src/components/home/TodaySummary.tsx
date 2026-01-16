@@ -21,7 +21,7 @@ export default function TodaySummary({ entriesCount, primaryEmotion }: Props) {
             </div>
 
             <div className="flex items-center gap-4 border-l border-slate-100 pl-6">
-                <div className={classNames("flex w-12 h-auto aspect-square items-center justify-center rounded-xl", hasEntries ? getEmotionColor(primaryEmotion) : "bg-slate-100")}>
+                <div className={classNames("flex w-12 h-auto aspect-square items-center justify-center rounded-xl", hasEntries ? getEmotionColor(primaryEmotion) : "")}>
                     <EmotionIcon emotion={hasEntries ? primaryEmotion : null} size={28} />
                 </div>
 

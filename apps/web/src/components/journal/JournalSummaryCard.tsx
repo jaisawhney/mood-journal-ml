@@ -5,6 +5,7 @@ import { getDisplayBuckets } from "../../storage/journalRepository";
 import { updateUserOverride } from "../../storage/journalRepository";
 import type { Emotion } from "../../types/types";
 import type { JournalEntry } from "../../storage/JournalDB";
+import { AnimatePresence, motion } from "framer-motion";
 
 type Props = {
     journalEntryId: number | null;
@@ -23,7 +24,7 @@ export default function JournalSummaryCard({ journalEntryId, entry, onClose }: P
     async function updateEmotions(emotions: Emotion[]) {
         if (journalEntryId === null) return;
         const buckets = getOverrideBuckets(entry, emotions);
-        updateUserOverride(journalEntryId, { buckets });
+        await updateUserOverride(journalEntryId, { buckets });
     }
 
     return (
@@ -45,11 +46,14 @@ export default function JournalSummaryCard({ journalEntryId, entry, onClose }: P
                         type="button"
                         onClick={() => setShowOverride(true)}
                         className="text-xs text-secondary hover:text-slate-600 hover:underline cursor-pointer"
+                        aria-expanded={showOverride}
+                        aria-controls="override-panel"
                     >
                         Feels a little off?
                     </button>
                 )}
             </div>
+
 
             <button
                 onClick={onClose}
@@ -57,7 +61,20 @@ export default function JournalSummaryCard({ journalEntryId, entry, onClose }: P
             >
                 Write another entry
             </button>
-            {showOverride && (<EmotionOverride value={selectedEmotions} onChange={updateEmotions} />)}
+            <AnimatePresence initial={false}>
+
+                {showOverride && (
+                    <motion.div
+                        id="override-panel"
+                        initial={{ opacity: 0, height: 0, y: -5 }}
+                        animate={{ opacity: 1, height: "auto", y: 0 }}
+                        exit={{ opacity: 0, height: 0, y: 5 }}
+                        transition={{ duration: 0.15, ease: "easeInOut" }}
+                    >
+                        <EmotionOverride value={selectedEmotions} onChange={updateEmotions} />
+                    </motion.div>
+                )}
+            </AnimatePresence>
         </section>
     );
 }
