@@ -1,5 +1,5 @@
 import './App.css'
-import { Suspense, lazy } from "react";
+import { Suspense, lazy, useEffect } from "react";
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom'
 import ErrorBoundary from './pages/ErrorBoundary';
 import { Toaster } from 'sonner';
@@ -12,6 +12,7 @@ import SettingsSkeleton from './pages/SettingsSkeleton';
 import HistorySkeleton from './pages/HistorySkeleton';
 import JournalSkeleton from './pages/JournalPageSkeleton';
 import InsightsSkeleton from './pages/InsightsPageSkeleton';
+import { startQueueProcessor } from './services/model/workerClient';
 
 const HomePage = lazy(() => import('./pages/Home'));
 const JournalPage = lazy(() => import('./pages/JournalPage'));
@@ -20,6 +21,9 @@ const SettingsPage = lazy(() => import('./pages/Settings'));
 const InsightsPage = lazy(() => import('./pages/InsightsPage'));
 
 function App() {
+  useEffect(() => {
+    startQueueProcessor();
+  }, []);
 
   return (
     <Router>

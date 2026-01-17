@@ -29,7 +29,8 @@ registerRoute(
         },
         plugins: [
             new ExpirationPlugin({
-                maxEntries: 20,
+                maxEntries: 10,
+                maxAgeSeconds: 90 * 24 * 60 * 60, // 90 Days
                 purgeOnQuotaError: true,
             }),
         ],
@@ -52,12 +53,12 @@ self.addEventListener('install', (event) => {
     event.waitUntil(
         caches.open(EMOTION_MODEL_CACHE).then(cache =>
             cache.addAll([
-                "/models/emotion-model/v1/onnx/model_quantized.onnx",
-                "/models/emotion-model/v1/tokenizer.json",
-                "/models/emotion-model/v1/tokenizer_config.json",
-                "/models/emotion-model/v1/special_tokens_map.json",
-                "/models/emotion-model/v1/config.json",
-                "/models/emotion-model/v1/ort_config.json",
+                "/api/models/emotion-model/v1/onnx/model_quantized.onnx",
+                "/api/models/emotion-model/v1/tokenizer.json",
+                "/api/models/emotion-model/v1/tokenizer_config.json",
+                "/api/models/emotion-model/v1/special_tokens_map.json",
+                "/api/models/emotion-model/v1/config.json",
+                "/api/models/emotion-model/v1/ort_config.json",
             ])
         ).catch((error) => {
             console.error("Failed to cache model files during activation:", error);

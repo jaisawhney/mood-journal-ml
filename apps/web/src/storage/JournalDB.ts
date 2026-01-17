@@ -27,19 +27,28 @@ export interface JournalEntry {
     raw: RawEmotionOutput;
     analysis: Analysis;
     userOverride?: UserOverride;
-
     createdAt: number;
     updatedAt: number;
 }
 
+export interface QueueItem {
+    id?: number;
+    entryId: number;
+    attempts?: number;
+    createdAt: number;
+    nextAttemptAt?: number;
+};
+
 export class JournalDB extends Dexie {
     entries!: Table<JournalEntry, number>;
+    queue!: Table<QueueItem, number>;
 
     constructor() {
         super("JournalDB");
 
         this.version(1).stores({
             entries: `++id, createdAt, updatedAt, raw.modelVersion`,
+            queue: `++id, entryId, status, createdAt, nextAttemptAt`
         });
     }
 }

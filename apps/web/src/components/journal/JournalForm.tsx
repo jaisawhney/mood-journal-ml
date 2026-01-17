@@ -27,12 +27,13 @@ export default function JournalForm({
             </div>
             <textarea
                 value={text}
+                disabled={loading}
                 onChange={onChange}
                 rows={6}
                 minLength={20}
                 maxLength={hardLimit}
                 placeholder="Start writing..."
-                className="form-input"
+                className="form-input disabled:opacity-50 min-h-[160px]"
                 aria-label="Journal entry text area"
             />
             <div className="flex justify-between items-center text-xs text-slate-400">
@@ -59,7 +60,7 @@ export default function JournalForm({
                     )
                     }
                 >
-                    {loading ? "Saving..." : "Save entry"}
+                    {loading ? "Analyzing Mood..." : "Save entry"}
                 </button>
             </div>
         </form>

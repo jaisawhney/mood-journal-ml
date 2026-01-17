@@ -1,4 +1,3 @@
-
 import type { Emotion, RawEmotionResult } from "../types/types";
 import { buildEmotionBuckets } from "../utils/emotionHelpers";
 import { MAX_BUCKETS } from "../constants/chartConstants";
@@ -7,28 +6,34 @@ import type { JournalEntry, UserOverride } from "./JournalDB";
 
 export async function createJournalEntry(
     text: string,
-    result: RawEmotionResult
 ): Promise<number> {
     const now = Date.now();
-    const buckets = Object.fromEntries(
-        buildEmotionBuckets(result.emotions, result.intensity)
-            .map(b => [b.bucket as Emotion, b.score])
-    );
+    const emptyBuckets: Record<Emotion, number> = {
+        Joy: 0,
+        Sadness: 0,
+        Anger: 0,
+        Fear: 0,
+        Trust: 0,
+        Disgust: 0,
+        Surprise: 0,
+        Anticipation: 0,
+    };
     return db.entries.add({
         text,
         raw: {
-            emotions: result.emotions,
-            intensity: result.intensity,
-            modelVersion: "emotion-v1",
+            emotions: {},
+            intensity: 0,
+            modelVersion: "",
         },
         analysis: {
-            buckets: buckets as Record<Emotion, number>,
-            intensity: result.intensity,
+            buckets: emptyBuckets,
+            intensity: 0,
         },
         createdAt: now,
         updatedAt: now,
     });
 }
+
 
 export async function updateUserOverride(id: number, override: Partial<UserOverride>) {
     const updatedAt = Date.now();
@@ -46,6 +51,31 @@ export async function updateUserOverride(id: number, override: Partial<UserOverr
     });
 }
 
+export async function patchJournalEntryWithResult(id: number, result: RawEmotionResult) {
+    const entry = await db.entries.get(id);
+    if (!entry) return;
+
+    const buckets = Object.fromEntries(
+        buildEmotionBuckets(result.emotions, result.intensity)
+            .map(emotionBucket => [emotionBucket.bucket as Emotion, emotionBucket.score])
+    );
+
+    const updatedAt = Date.now();
+
+    return db.entries.update(id, {
+        raw: {
+            emotions: result.emotions,
+            intensity: result.intensity,
+            modelVersion: "emotion-v1",
+        },
+        analysis: {
+            buckets: buckets as Record<Emotion, number>,
+            intensity: result.intensity,
+        },
+        updatedAt,
+    });
+}
+
 export async function replaceAllEntries(entries: JournalEntry[]) {
     if (!Array.isArray(entries) || entries.length === 0) return;
 
@@ -57,12 +87,25 @@ export async function replaceAllEntries(entries: JournalEntry[]) {
     });
 }
 
+export async function deleteEntry(id: number) {
+    return db.entries.delete(id);
+}
+
 export async function clearAllEntries() {
     return db.entries.clear();
 }
 
 export function getDisplayBuckets(buckets: Record<Emotion, number>) {
+    if (Object.values(buckets).every(v => v === 0)) return [];
+
     return Object.entries(buckets)
         .sort((a, b) => b[1] - a[1])
         .slice(0, MAX_BUCKETS);
+}
+
+export function updateJournalText(id: number, newText: string) {
+    return db.entries.update(id, {
+        text: newText,
+        updatedAt: Date.now(),
+    });
 }

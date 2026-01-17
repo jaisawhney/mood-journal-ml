@@ -21,7 +21,6 @@ export function groupEntriesByDate(entries: JournalEntry[]): Map<string, Journal
     return map;
 }
 
-
 interface ChartAxisContext {
     getLabelForValue(value: number): string;
 }

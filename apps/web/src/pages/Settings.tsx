@@ -2,18 +2,16 @@ import classNames from "classnames"
 import PageHeader from "../components/ui/PageHeader"
 import { replaceAllEntries, clearAllEntries } from "../storage/journalRepository"
 import { useState } from "react";
+import ArmedButton from "../components/ui/ArmedButton";
 import { toast } from "sonner";
 import { useJournalEntries } from "../hooks/useJournalEntries";
 import type { JournalEntry } from "../storage/JournalDB";
 import { AnimatePresence, motion } from "framer-motion";
 import { ChevronDown } from "lucide-react";
 
-const CONFIRM_WINDOW_MS = 3000;
 const URL_REVOKE_DELAY_MS = 1000;
 export default function SettingsPage() {
     const { entries } = useJournalEntries();
-    const [armedClear, setArmedClear] = useState(false);
-    const [armedImport, setArmedImport] = useState(false);
     const [expanded, setExpanded] = useState(false);
 
     function validateEntry(entry: JournalEntry): boolean {
@@ -26,22 +24,14 @@ export default function SettingsPage() {
         );
     }
 
-    function handleClearData() {
-        if (armedClear) {
-            clearAllEntries()
-                .then(() => {
-                    toast.success("All journal data cleared.");
-                })
-                .catch((err) => {
-                    console.error(err);
-                    toast.error("Failed to clear journal data.");
-                });
-            setArmedClear(false);
-            return;
+    async function handleClearConfirmed() {
+        try {
+            await clearAllEntries();
+            toast.success("All journal data cleared.");
+        } catch (err) {
+            console.error(err);
+            toast.error("Failed to clear journal data.");
         }
-        setArmedClear(true);
-        navigator.vibrate?.(30);
-        window.setTimeout(() => setArmedClear(false), CONFIRM_WINDOW_MS);
     }
 
     function handleExport() {
@@ -70,14 +60,7 @@ export default function SettingsPage() {
         }
     }
 
-    async function handleImport() {
-        if (!armedImport) {
-            setArmedImport(true);
-            navigator.vibrate?.(30);
-            setTimeout(() => setArmedImport(false), CONFIRM_WINDOW_MS);
-            return;
-        }
-        setArmedImport(false);
+    async function handleImportConfirmed() {
         try {
             const input = document.createElement("input");
             input.type = "file";
@@ -146,13 +129,12 @@ export default function SettingsPage() {
                                 Permanently remove all entries from this device
                             </p>
                         </div>
-                        <button
-                            type="button"
-                            onClick={handleClearData}
+                        <ArmedButton
+                            label="Clear data"
+                            confirmLabel="Press again to confirm"
+                            onConfirm={handleClearConfirmed}
                             className="btn bg-red-50 text-red-700 hover:bg-red-100 dark:bg-red-900 dark:text-white dark:hover:bg-red-800"
-                        >
-                            {armedClear ? "Press again to confirm" : "Clear data"}
-                        </button>
+                        />
                     </div>
                 </section>
 
@@ -196,13 +178,12 @@ export default function SettingsPage() {
                                                 Upload a JSON file to import entries. This will overwrite your current entries!
                                             </p>
                                         </div>
-                                        <button
-                                            type="button"
-                                            onClick={handleImport}
-                                            className={classNames("btn", armedImport ? "bg-red-50 text-red-700 hover:bg-red-100 dark:bg-red-900 dark:text-white dark:hover:bg-red-800" : "")}
-                                        >
-                                            {armedImport ? "Press again to confirm" : "Import"}
-                                        </button>
+                                        <ArmedButton
+                                            label="Import"
+                                            confirmLabel="Press again to confirm"
+                                            onConfirm={handleImportConfirmed}
+                                            className="btn"
+                                        />
                                     </div>
 
                                     <div className="flex items-center justify-between gap-4">

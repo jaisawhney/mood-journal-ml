@@ -4,14 +4,15 @@ import EmotionIcon from "../ui/EmotionIcon";
 import { EmotionOverride } from "../ui/EmotionOverride";
 import { getEmotionColor } from "../../constants/emotionMaps";
 import { formatDate } from "../../utils/date";
-import { updateUserOverride } from "../../storage/journalRepository";
+import ArmedButton from "../ui/ArmedButton";
+import { deleteEntry, updateUserOverride } from "../../storage/journalRepository";
 import { getAnalysis, getOverrideBuckets, getPrimaryEmotion } from "../../utils/emotionHelpers";
 import { getDisplayBuckets } from "../../storage/journalRepository";
 import type { Analysis, Emotion } from "../../types/types";
 import type { JournalEntry } from "../../storage/JournalDB";
-import { MAX_BUCKETS } from "../../constants/chartConstants";
 import { AnimatePresence, LayoutGroup, motion } from "framer-motion";
 import { toast } from "sonner";
+import { useInferenceQueue } from "../../hooks/useInferenceQueue";
 
 type Props = {
     entry: JournalEntry;
@@ -19,12 +20,13 @@ type Props = {
 
 export default function HistoryCard({ entry }: Props) {
     const [expanded, setExpanded] = useState(false);
-
     const journalEntryId = entry.id!;
     const analysis: Analysis = getAnalysis(entry);
     const displayBuckets = getDisplayBuckets(analysis.buckets);
     const selectedEmotions = displayBuckets.map(([emotion]) => emotion as Emotion);
     const primaryEmotion = getPrimaryEmotion(Object.fromEntries(displayBuckets));
+
+    const { isQueued } = useInferenceQueue(journalEntryId);
 
     async function updateEmotions(emotions: Emotion[]) {
         const buckets = getOverrideBuckets(entry, emotions);
@@ -35,10 +37,6 @@ export default function HistoryCard({ entry }: Props) {
             toast.error("Failed to update emotions. Please try again.");
         }
     }
-
-    const insightPairs = Object.entries(analysis.buckets)
-        .sort((a, b) => (b[1] ?? 0) - (a[1] ?? 0))
-        .slice(0, MAX_BUCKETS);
 
     const itemVariants = {
         hidden: { opacity: 0, y: 10 },
@@ -62,7 +60,7 @@ export default function HistoryCard({ entry }: Props) {
                             size={16} />
                     </span>
                     <span className="mood-badge-text">
-                        {primaryEmotion || "Neutral"}
+                        {isQueued && !primaryEmotion ? "Analyzing..." : primaryEmotion || "Neutral"}
                     </span>
                 </div>
             </div>
@@ -76,7 +74,7 @@ export default function HistoryCard({ entry }: Props) {
                 onClick={() => setExpanded(v => !v)}
                 className="text-xs text-secondary hover:text-slate-400 transition cursor-pointer"
             >
-                {expanded ? "Hide details" : "View details"}
+                {expanded ? "Hide breakdown" : "View breakdown"}
             </button>
             <AnimatePresence initial={false}>
                 {expanded && (
@@ -87,23 +85,22 @@ export default function HistoryCard({ entry }: Props) {
                         transition={{ duration: 0.15, ease: "easeInOut" }}
                         className="grid gap-4"
                     >
-                        <div className="pt-4 border-t border-slate-100 space-y-4">
+                        <div className="pt-4 border-t border-slate-300 dark:border-slate-100 space-y-4">
                             {analysis.isOverridden && (
                                 <div className="text-xs text-secondary">
-                                    Emotions adjusted by you
+                                    Adjusted by you
                                 </div>
                             )}
                             <div className="rounded-md bg-slate-50 px-3 py-2 text-xs text-slate-600 dark:bg-neutral-900">
-                                <p className="text-slate-400 mb-1">{insightPairs.length > 0 ? "Used in insights as" : "Not contributing to insights"}</p>
-
+                                <p className="text-slate-400 mb-1">{displayBuckets.length > 0 ? "Used in insights as" : "Not contributing to insights"}</p>
                                 <div className="flex flex-wrap gap-2">
                                     <LayoutGroup id={journalEntryId.toString()}>
                                         <motion.ul className="contents" >
                                             <AnimatePresence initial={false}>
-                                                {insightPairs.map(([emotion], idx) => (
+                                                {displayBuckets.map(([emotion], idx) => (
                                                     <motion.li
                                                         key={emotion}
-                                                        layoutDependency={insightPairs.length}
+                                                        layoutDependency={displayBuckets.length}
                                                         className="inline-block mr-2 mb-2"
                                                         layout
                                                         variants={itemVariants}
@@ -140,6 +137,15 @@ export default function HistoryCard({ entry }: Props) {
                                     onChange={updateEmotions}
                                     size="sm"
                                 />
+                                <div className="flex items-center justify-end pt-3">
+                                    {/* TODO: Add edit button */}
+                                    <ArmedButton
+                                        label="Delete entry"
+                                        confirmLabel="Press again to confirm"
+                                        onConfirm={() => deleteEntry(journalEntryId)}
+                                        className="text-xs text-red-500 hover:text-red-600 hover:underline transition cursor-pointer"
+                                    />
+                                </div>
                             </div>
                         </div>
                     </motion.div>

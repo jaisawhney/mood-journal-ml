@@ -28,6 +28,11 @@ export default function JournalHistoryPage() {
         defaultRowHeight: 750
     });
 
+    const handleRangeChange = (label: string) => {
+        const selectedRange = DATE_RANGES.find(r => r.label === label);
+        if (selectedRange) setRange(selectedRange);
+    }
+
     return (
         <div className="page-container">
             <div className="page-content-lg">
@@ -39,7 +44,7 @@ export default function JournalHistoryPage() {
                 <DateRangeSelect
                     value={range.label}
                     ranges={DATE_RANGES}
-                    onChange={label => setRange(DATE_RANGES.find(r => r.label === label) ?? range)}
+                    onChange={handleRangeChange}
                 />
 
                 {!loading && entries.length !== 0 ? (

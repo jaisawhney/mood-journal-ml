@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import PageHeader from "../components/ui/PageHeader";
 import { Doughnut, Line } from "react-chartjs-2";
 import { Chart, ArcElement, Tooltip, Legend, CategoryScale, LinearScale, PointElement, LineElement, Filler, type TooltipItem } from "chart.js";
@@ -20,7 +20,7 @@ export default function InsightsPage() {
     const { labels, series, percentages, dominantEmotion, activeDays, totalEntries } = useInsightStats(entries, range.days);
 
     const isEmpty = activeDays === 0 || Object.values(percentages).every(p => p === 0);
-    const doughnutData = isEmpty ? {
+    const doughnutData = useMemo(() => (isEmpty ? {
         labels: ["No data"],
         datasets: [{
             data: [1],
@@ -38,7 +38,7 @@ export default function InsightsPage() {
             borderWidth: 0,
             hoverOffset: 0,
         }],
-    };
+    }), [isEmpty, percentages]);
 
     const doughnutOptions = {
         responsive: true,
@@ -62,7 +62,7 @@ export default function InsightsPage() {
             },
         },
     };
-    const lineData = {
+    const lineData = useMemo(() => ({
         labels,
         datasets: [{
             data: series[selectedEmotion],
@@ -74,7 +74,7 @@ export default function InsightsPage() {
             borderColor: `rgba(${EMOTION_RGB_MAP[selectedEmotion]}, 1)`,
             backgroundColor: `rgba(${EMOTION_RGB_MAP[selectedEmotion]},0.15)`,
         }],
-    };
+    }), [labels, series, selectedEmotion]);
     const lineOptions = {
         responsive: true,
         maintainAspectRatio: false,

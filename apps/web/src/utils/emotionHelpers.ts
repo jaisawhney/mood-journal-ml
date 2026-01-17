@@ -32,7 +32,6 @@ const EMOTION_MAP: Record<string, Set<string>> = {
 };
 
 const SOFT_CAP = 1.5;
-const OVERRIDE_BLEND_ALPHA = 0.6;
 const OVERRIDE_LINEAR_DROP = 0.2;
 
 export type BucketResult = {
@@ -41,7 +40,7 @@ export type BucketResult = {
 };
 
 export function liftIntensity(intensity: number): number {
-    // apply a Softplus  to intensity values to avoid very low weights contributing nothing
+    // apply a Softplus to intensity values to avoid very low weights contributing nothing
     const soft = Math.log1p(Math.exp(intensity)) / Math.log1p(Math.exp(SOFT_CAP));
     return Math.min(soft, 1);
 }
@@ -76,8 +75,8 @@ export function buildEmotionBuckets(
         else finalPositive = 0;
     }
 
-    // Rebase intensity using liftIntensity, drop if intensity <= 0
-    const rebasedIntensity = intensity > 0 ? liftIntensity(intensity) : 0;
+    // Rebase intensity using liftIntensity
+    const rebasedIntensity = liftIntensity(intensity)
     if (rebasedIntensity === 0) return [];
 
     const rawScores: { bucket: string; score: number; valence: string }[] = [];
@@ -152,7 +151,6 @@ export function getAnalysis(entry: JournalEntry): Analysis {
 export function getOverrideBuckets(entry: JournalEntry, emotions: Emotion[]): Partial<Record<Emotion, number>> {
     const buckets: Partial<Record<Emotion, number>> = {};
     const intensity: number = liftIntensity(entry.analysis.intensity);
-    const modelBuckets = entry.analysis.buckets;
 
     for (const [idx, emotion] of emotions.entries()) {
         const existingValue = entry?.userOverride?.buckets?.[emotion];
@@ -162,8 +160,7 @@ export function getOverrideBuckets(entry: JournalEntry, emotions: Emotion[]): Pa
         }
         const overrideStrength = Math.max(1 - OVERRIDE_LINEAR_DROP * idx, 0);
         const overrideValue = intensity * overrideStrength;
-        const modelValue = modelBuckets[emotion] || 0;
-        buckets[emotion] = OVERRIDE_BLEND_ALPHA * overrideValue + (1 - OVERRIDE_BLEND_ALPHA) * modelValue;
+        buckets[emotion] = overrideValue;
     }
     return buckets;
 }

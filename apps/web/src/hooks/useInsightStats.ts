@@ -20,11 +20,18 @@ export interface InsightStats {
     totalEntries: number;
 }
 
-
 export function useInsightStats(entries: JournalEntry[], days: number): InsightStats {
     return useMemo(() => {
+        const analyzedEntries = entries.map(entry => {
+            return {
+                ...entry,
+                analysis: getAnalysis(entry),
+            };
+        });
+
         const labels = getDayLabels(days);
-        const byDate = groupEntriesByDate(entries);
+        const byDate = groupEntriesByDate(analyzedEntries);
+
 
         const series = {} as Record<Emotion, (number | null)[]>;
         const rawSeries = {} as Record<Emotion, (number | null)[]>;
@@ -49,12 +56,12 @@ export function useInsightStats(entries: JournalEntry[], days: number): InsightS
             }
 
             activeDays++;
-            let dayTotal = 0;
+            let dayEmotionSum = 0;
             let contributingEmotions = 0;
             EMOTIONS.forEach(emotion => {
                 let emotionSum = 0;
                 for (const entry of dayEntries) {
-                    const analysis = getAnalysis(entry);
+                    const analysis = entry.analysis;
                     emotionSum += analysis.buckets[emotion] ?? 0;
                 }
 
@@ -65,11 +72,11 @@ export function useInsightStats(entries: JournalEntry[], days: number): InsightS
                     totals[emotion] += averageEmotionScore;
                     contributingEmotions++;
                 }
-                dayTotal += averageEmotionScore;
+                dayEmotionSum += averageEmotionScore;
             });
 
             // compute overall average for the day (only non-zero emotions)
-            overallRaw.push(contributingEmotions > 0 ? dayTotal / contributingEmotions : null);
+            overallRaw.push(contributingEmotions > 0 ? dayEmotionSum / contributingEmotions : null);
             entriesInRange += dayEntries.length;
         });
 

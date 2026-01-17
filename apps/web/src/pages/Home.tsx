@@ -6,6 +6,7 @@ import TodaySummary from "../components/home/TodaySummary";
 import { useInsightStats } from "../hooks/useInsightStats";
 import { chartXAxisTickCallback, chartYAxisTickCallback } from "../utils/chartUtils";
 import { useJournalEntriesForDays } from "../hooks/useJournalEntries";
+import { useMemo } from "react";
 Chart.register(CategoryScale, LinearScale, PointElement, LineElement, Tooltip, Legend, Filler);
 
 const HISTORY_DAYS = 14;
@@ -42,7 +43,7 @@ const chartOptions = {
 export default function Home() {
   const { entries: recentEntries } = useJournalEntriesForDays(HISTORY_DAYS);
   const { overallSeries, dominantEmotion, labels } = useInsightStats(recentEntries, HISTORY_DAYS);
-  const chartData = {
+  const chartData = useMemo(() => ({
     labels: labels,
     datasets: [
       {
@@ -56,7 +57,7 @@ export default function Home() {
         backgroundColor: "#ede9fe",
       },
     ],
-  };
+  }), [labels, overallSeries]);
   return (
     <div className="page-container">
       <div className="page-content-wide md:space-y-10 space-y-5">

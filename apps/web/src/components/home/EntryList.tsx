@@ -7,7 +7,6 @@ type Props = {
     entries: JournalEntry[];
 };
 
-
 function Row({ index, style, entries, }: RowComponentProps<{ entries: JournalEntry[] }>) {
     const entry = entries[index];
 
