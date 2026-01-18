@@ -1,0 +1,17 @@
+artifacts/
+.venv/
+venv/
+node_modules/
+apps/web/dist/
+
+__pycache__/
+*.pyc
+.env
+.env.*
+
+notebooks/
+*.ipynb_checkpoints
+.vscode/
+.idea/
+
+.git

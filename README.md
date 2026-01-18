@@ -33,6 +33,7 @@ Offline-first Progressive Web App (PWA) for multi-label emotion classification a
 │   ├── export/         # ONNX export
 │   ├── utils/          # Helpers
 │   ├── configs/        # YAML configs
+├── docker/             # Dockerfile(s) and deployment helpers
 ├── notebooks/          # Jupyter notebooks
 ├── tests/              # Pytest
 └── pyproject.toml      # Python project configuration

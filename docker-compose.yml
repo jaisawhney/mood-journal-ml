@@ -1,0 +1,11 @@
+services:
+  web:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile
+    image: mood-app:latest
+    ports:
+      - "8080:80"
+    volumes:
+      - ./artifacts/models:/usr/share/nginx/html/api/models:ro
+    restart: unless-stopped
