@@ -1,8 +1,10 @@
 import type { JournalEntry } from '../storage/JournalDB';
-import type { Emotion } from '../types/types';
-import { getAnalysis, getPrimaryEmotion as getPrimaryEmotionFromBuckets } from './emotionHelpers';
 
-
+/**
+ * Generate an array of date labels for the past specified number of days
+ * @param days number of days
+ * @returns array of date strings
+ */
 export function getDayLabels(days: number): string[] {
     return Array.from({ length: days }, (_, i) => {
         const date = new Date();
@@ -11,6 +13,11 @@ export function getDayLabels(days: number): string[] {
     });
 }
 
+/**
+ * Group journal entries by their creation date (as date string)
+ * @param entries array of JournalEntry
+ * @returns Map with date strings as keys and arrays of JournalEntry as values
+ */
 export function groupEntriesByDate(entries: JournalEntry[]): Map<string, JournalEntry[]> {
     const map = new Map<string, JournalEntry[]>();
     for (const entry of entries) {
@@ -25,35 +32,36 @@ interface ChartAxisContext {
     getLabelForValue(value: number): string;
 }
 
+/**
+ * X-axis tick callback to format date labels
+ * @param this ChartAxisContext
+ * @param tickValue the tick value
+ * @returns formatted date string
+ */
 export function chartXAxisTickCallback(this: ChartAxisContext, tickValue: string | number) {
     const label = this.getLabelForValue(tickValue as number);
     const date = new Date(label);
     return `${date.toLocaleString(undefined, { month: 'short' })} ${date.getDate()}`;
 }
 
+/**
+ * Y-axis tick callback to convert numeric values to labels
+ * @param tickValue the tick value
+ * @param _index the index of the tick
+ * @returns string label for the tick
+ */
 export function chartYAxisTickCallback(tickValue: any, _index: number) {
     if (tickValue <= 0) return "Low";
     if (tickValue < 1) return "Moderate";
     return "High";
 }
 
-export function getPrimaryEmotionFromEntries(entries: JournalEntry[]): Emotion | null {
-    const emotionSums: Record<string, number> = {};
-    let primaryEmotion: Emotion | null = null;
-    for (const entry of entries) {
-        const buckets = getAnalysis(entry).buckets;
-        if (Object.keys(buckets).length === 0) continue;
-        const emotion = getPrimaryEmotionFromBuckets(buckets);
-        if (!emotion) continue;
-        const intensity = buckets[emotion] ?? 0;
-        emotionSums[emotion] = (emotionSums[emotion] || 0) + intensity;
-        if (primaryEmotion === null || emotionSums[emotion] > emotionSums[primaryEmotion]) {
-            primaryEmotion = emotion;
-        }
-    }
-    return primaryEmotion;
-}
-
+/**
+ * Normalize an array of numbers to a given percentile
+ * @param values array of numbers (or nulls)
+ * @param percentile percentile (default 0.9)
+ * @returns array of normalized numbers (or nulls)
+ */
 export function normalizeToPercentile(
     values: (number | null)[],
     percentile: number = 0.9

@@ -5,6 +5,7 @@ CONFIG_DIR = "ml/configs/models"
 
 
 def load_config():
+    """Load model configuration based on the MODEL_CONFIG environment variable."""
     config_name = os.getenv("MODEL_CONFIG")
     if not config_name:
         raise RuntimeError("MODEL_CONFIG is not set. Example: MODEL_CONFIG=distilbert.yaml")

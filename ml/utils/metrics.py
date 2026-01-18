@@ -6,6 +6,7 @@ from scipy.stats import spearmanr
 
 # this function is used for both emotion and intensity metrics
 def compute_metrics(eval_pred):
+    """Compute evaluation metrics given predictions and labels."""
     predictions, labels = eval_pred
     if isinstance(predictions, tuple) or isinstance(predictions, list):
         emotion_logits, intensity_logits = predictions
@@ -38,6 +39,7 @@ def compute_metrics(eval_pred):
 
 
 def compute_auc_metrics(logits, labels, label_names=None):
+    """Compute AUC metrics for multi-label classification."""
     probs = expit(logits)
     micro_auc = roc_auc_score(labels.ravel(), probs.ravel())
 

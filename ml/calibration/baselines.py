@@ -6,6 +6,8 @@ from ml.utils.data import load_and_split_lemotif
 
 
 def compute_label_baselines(logits: torch.Tensor, labels: list[str]):
+    """Compute baseline statistics for each label given the logits tensor."""
+
     return {
         label: {
             "mean": logits[:, idx].mean().item(),

@@ -19,6 +19,10 @@ async function ensureWorker() {
 }
 
 const bc = new BroadcastChannel("inference-queue");
+/** Enqueue a journal entry text for emotion prediction
+ * @param entryId journal entry ID
+ * @returns the ID of the created queue job
+ */
 export async function enqueueTextForPrediction(entryId: number) {
     const id = await db.queue.add({
         entryId,
@@ -31,6 +35,7 @@ export async function enqueueTextForPrediction(entryId: number) {
     return id;
 }
 
+/** Terminate the web worker */
 export function terminateWebWorker() {
     if (workerInstance) {
         apiInstance = null;
@@ -40,6 +45,7 @@ export function terminateWebWorker() {
 }
 
 let running = false;
+/** Start the inference queue processor in the web worker */
 export async function startQueueProcessor() {
     if (running) return;
     running = true;
@@ -53,6 +59,7 @@ export async function startQueueProcessor() {
     }
 }
 
+/** Stop the inference queue processor and terminate the web worker */
 export async function stopQueueProcessor() {
     if (!running) return;
     running = false;

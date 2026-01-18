@@ -1,3 +1,8 @@
+/**
+ * Format a timestamp into a readable date string
+ * @param ts timestamp in milliseconds
+ * @returns formatted date string
+ */
 export function formatDate(ts: number): string {
     const date = new Date(ts);
     return date.toLocaleDateString(undefined, {

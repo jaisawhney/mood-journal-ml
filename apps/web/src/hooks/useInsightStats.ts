@@ -20,6 +20,12 @@ export interface InsightStats {
     totalEntries: number;
 }
 
+/**
+ * Hook to compute statistics from journal entries over a specified number of days
+ * @param entries array of JournalEntry
+ * @param days number of days to consider
+ * @returns InsightStats object containing computed statistics
+ */
 export function useInsightStats(entries: JournalEntry[], days: number): InsightStats {
     return useMemo(() => {
         const analyzedEntries = entries.map(entry => {

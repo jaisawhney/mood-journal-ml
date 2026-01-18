@@ -12,6 +12,7 @@ from ml.training.trainer import EmotionModel
 
 
 def simplify_onnx(input_onnx: Path, output_onnx: Path):
+    """Simplify an ONNX model and save the simplified version."""
     model = onnx.load(str(input_onnx))
     model_simp, check = simplify(model)
     if not check:
@@ -20,6 +21,7 @@ def simplify_onnx(input_onnx: Path, output_onnx: Path):
 
 
 def export_onnx_torch(model, tokenizer, onnx_path: Path, max_length=128):
+    """Export a PyTorch model to ONNX format."""
     model.eval()
     dummy = tokenizer(
         ["Example text", "Another example"],

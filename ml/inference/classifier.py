@@ -9,6 +9,8 @@ from ml.utils.config import load_config
 
 
 class EmotionClassifier:
+    """A classifier for predicting emotions and intensity from text inputs."""
+
     def __init__(self, device: str = None):
         self.cfg = load_config()
         model_dir = Path(self.cfg["paths"]["artifacts_dir"] + "/final_model")
@@ -35,6 +37,7 @@ class EmotionClassifier:
 
     @torch.no_grad()
     def predict_logits(self, texts: List[str]) -> tuple[torch.Tensor, torch.Tensor]:
+        """Predict emotion and intensity logits for a list of texts."""
         if not texts:
             return torch.empty(0, len(self.labels)), torch.empty(0, 1)
 

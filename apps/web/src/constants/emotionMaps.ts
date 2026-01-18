@@ -26,7 +26,6 @@ export const EMOTION_ICONS: (emotion: Emotion) => LucideIcon = (emotion: Emotion
     }
 };
 
-
 const EMOTION_COLORS_MAP: Record<Emotion, string> = {
     Joy: "bg-amber-100 text-amber-700",
     Sadness: "bg-sky-100 text-sky-700",
@@ -49,6 +48,11 @@ export const EMOTION_RGB_MAP: Record<Emotion, string> = {
     Anticipation: "253,186,116"// orange-300
 };
 
+/**
+ * Get the color classes for a given emotion
+ * @param emotion the emotion
+ * @returns string of CSS classes for background and text color
+ */
 export function getEmotionColor(emotion: string | null): string {
     return EMOTION_COLORS_MAP[emotion as Emotion] ?? "";
 }

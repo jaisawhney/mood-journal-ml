@@ -92,7 +92,11 @@ class EmotionModel {
         return (value - baselineMean) / baselineStd;
     }
 
-    async predictEmotions(text: string): Promise<RawEmotionResult> {
+    /** Predict emotions and intensity from input text
+     * @param text input text
+     * @returns RawEmotionResult with emotions and intensity
+     */
+    public async predictEmotions(text: string): Promise<RawEmotionResult> {
         if (text.trim().length < 20) {
             throw new Error("Text must be at least 20 characters long");
         }
@@ -182,6 +186,9 @@ class EmotionModel {
         };
     }
 
+    /** Warm up the model by loading it into memory
+     * @returns Promise that resolves when warmup is complete
+     */
     public async warmup(): Promise<void> {
         try {
             await Promise.all([this.getTokenizer(), this.getModel()]);

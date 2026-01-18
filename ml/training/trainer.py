@@ -46,6 +46,7 @@ class SimpleWeightedTrainer(Trainer):
 
 
 def train_go_emotions():
+    """Train a model on the GoEmotions dataset."""
     tokenizer = AutoTokenizer.from_pretrained(MODEL_NAME, use_fast=True)
     dataset, label_names, id2label, label2id = load_go_emotions()
 
@@ -260,6 +261,7 @@ class MultiLabelTrainer(Trainer):
 
 
 def train_lemotif():
+    """Train a model on the LemoTif dataset."""
     base_model_dir = Path(OUTPUT_DIR) / "base_model"
     tokenizer = AutoTokenizer.from_pretrained(base_model_dir, use_fast=True)
     dataset, label_names, id2label, label2id = load_and_split_lemotif()

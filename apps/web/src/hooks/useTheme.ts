@@ -13,6 +13,10 @@ function getInitialTheme(): Theme {
     return getSystemTheme();
 }
 
+/**
+ * Hook to manage theme (light/dark)
+ * @returns current theme, function to set theme, and function to toggle theme
+ */
 export function useTheme() {
     const [theme, setTheme] = useState<Theme>(getInitialTheme);
     useEffect(() => {

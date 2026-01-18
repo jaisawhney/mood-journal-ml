@@ -8,6 +8,10 @@ async function checkIfEntryIsQueued(entryId?: number): Promise<boolean> {
     return !!job;
 }
 
+/** Hook to manage inference queue for journal entries
+ * @param entryId optional journal entry ID
+ * @returns object with isQueued state and analyze function
+ */
 export function useInferenceQueue(entryId?: number) {
     const isQueued = useLiveQuery(
         () => checkIfEntryIsQueued(entryId),
@@ -16,6 +20,7 @@ export function useInferenceQueue(entryId?: number) {
 
     return {
         isQueued: isQueued ?? false,
+        // TODO: move to utils file maybe
         analyze: async (id?: number): Promise<boolean> => {
             try {
                 const effectiveEntryId = id ?? entryId;

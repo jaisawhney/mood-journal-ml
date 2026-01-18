@@ -1,36 +1,15 @@
 import type { JournalEntry } from "../storage/JournalDB";
 import type { Analysis, Emotion } from "../types/types";
 
-//TODO: clean spaghetti code
-
-const POSITIVE_LABELS = new Set([
-    "happy", "excited", "satisfied", "proud"
-]);
-
-const NEGATIVE_LABELS = new Set([
-    "afraid", "anxious", "sad", "ashamed", "disgusted", "angry", "frustrated"
-]);
-
-const VALENCE: Record<string, "positive" | "negative" | "neutral"> = {
-    Joy: "positive",
-    Trust: "positive",
-    Anticipation: "neutral",
-    Surprise: "neutral",
-    Sadness: "negative",
-    Fear: "negative",
-    Anger: "negative",
-    Disgust: "negative",
-};
-
-const EMOTION_MAP: Record<string, Set<string>> = {
-    "Joy": new Set(["happy", "satisfied", "proud"]),
-    "Trust": new Set(["calm"]),
-    "Fear": new Set(["afraid", "anxious", "awkward"]),
-    "Surprise": new Set(["surprised"]),
-    "Sadness": new Set(["sad", "jealous", "nostalgic"]),
-    "Disgust": new Set(["disgusted", "ashamed"]),
-    "Anger": new Set(["angry", "frustrated"]),
-    "Anticipation": new Set(["excited"]),
+const EMOTION_MAP: Record<string, string[]> = {
+    "Joy": ["happy", "satisfied", "proud"],
+    "Trust": ["calm"],
+    "Fear": ["afraid", "anxious", "awkward"],
+    "Surprise": ["surprised"],
+    "Sadness": ["sad", "jealous", "nostalgic"],
+    "Disgust": ["disgusted", "ashamed"],
+    "Anger": ["angry", "frustrated"],
+    "Anticipation": ["excited"],
 };
 
 const SOFT_CAP = 1.5;
@@ -38,50 +17,37 @@ const OVERRIDE_LINEAR_DROP = 0.2;
 
 export type BucketResult = {
     bucket: string;
-    score: number;
+    dominance: number;
 };
 
+/**
+ * Apply a Softplus function to intensity to lift low values
+ * @param intensity raw intensity score
+ * @returns lifted intensity score between 0 and 1
+ */
 export function liftIntensity(intensity: number): number {
-    // apply a Softplus to intensity values to avoid very low weights contributing nothing
     const soft = Math.log1p(Math.exp(intensity)) / Math.log1p(Math.exp(SOFT_CAP));
     return Math.min(soft, 1);
 }
 
-export function calculateValenceMass(
-    emotions: Record<string, number>,
-): { positive: number; negative: number } {
-    let positive = 0;
-    let negative = 0;
-    for (const label in emotions) {
-        const emotionValue = emotions[label];
-        if (emotionValue > 0) {
-            if (POSITIVE_LABELS.has(label)) positive += emotionValue;
-            if (NEGATIVE_LABELS.has(label)) negative += emotionValue;
-        }
-    }
-    return { positive, negative };
-}
-
+/**
+ * Build emotion buckets from raw emotions and intensity
+ * @param emotions the raw emotions
+ * @param intensity the intensity score
+ * @param topN number of top buckets to return
+ * @returns array of BucketResult
+ */
 export function buildEmotionBuckets(
     emotions: Record<string, number>,
-    intensity: number
+    intensity: number,
+    topN: number = 3
 ): BucketResult[] {
-    const { positive, negative } = calculateValenceMass(emotions);
-    const margin = Math.abs(positive - negative);
-    const MARGIN_THRESHOLD = 0.5;
-
-    let finalPositive = positive;
-    let finalNegative = negative;
-    if (margin > MARGIN_THRESHOLD) {
-        if (positive > negative) finalNegative = 0;
-        else finalPositive = 0;
-    }
-
     // Rebase intensity using liftIntensity
-    const rebasedIntensity = liftIntensity(intensity)
+    const rebasedIntensity = liftIntensity(intensity);
     if (rebasedIntensity === 0) return [];
 
-    const rawScores: { bucket: string; score: number; valence: string }[] = [];
+    // Build raw scores for each parent emotion bucket
+    const rawScores: { bucket: string; dominance: number }[] = [];
     for (const [parent, subEmotions] of Object.entries(EMOTION_MAP)) {
         let bucketScore = 0;
         for (const subEmotion of subEmotions) {
@@ -89,32 +55,20 @@ export function buildEmotionBuckets(
             bucketScore = Math.max(bucketScore, emotionValue);
         }
         if (bucketScore > 0) {
-            const valence = VALENCE[parent];
-            if (valence === "positive" && finalPositive === 0) continue;
-            if (valence === "negative" && finalNegative === 0) continue;
-            rawScores.push({ bucket: parent, score: bucketScore * rebasedIntensity, valence });
+            rawScores.push({ bucket: parent, dominance: bucketScore * rebasedIntensity });
         }
     }
 
     if (rawScores.length === 0) return [];
-    const scores = rawScores.map(b => b.score);
-    const min = Math.min(...scores);
-    const max = Math.max(...scores);
-    const range = max - min || 1;
-
-    const buckets: BucketResult[] = rawScores.map(({ bucket, score }) => ({
-        bucket,
-        score: (score - min) / range,
-    }));
-
-    buckets.sort((a, b) => b.score - a.score);
-    if (buckets.length > 1) {
-        buckets.pop(); // remove lowest bucket
-    }
-    return buckets;
+    rawScores.sort((a, b) => b.dominance - a.dominance);
+    return rawScores.slice(0, topN); // Return top N buckets
 }
 
-
+/**
+ * Get the primary emotion from given buckets
+ * @param buckets emotion buckets
+ * @returns the primary Emotion or null
+ */
 export function getPrimaryEmotion(
     buckets: Partial<Record<Emotion, number>>
 ): Emotion | null {
@@ -123,6 +77,11 @@ export function getPrimaryEmotion(
     return entries.reduce((best, curr) => curr[1] > best[1] ? curr : best)[0];
 }
 
+/**
+ * Get the analysis for a journal entry, considering user overrides
+ * @param entry the journal entry
+ * @returns the analysis
+ */
 export function getAnalysis(entry: JournalEntry): Analysis {
     const override = entry?.userOverride ?? null;
     if (!entry.analysis) return {
@@ -141,7 +100,7 @@ export function getAnalysis(entry: JournalEntry): Analysis {
     };
 
     return {
-        // @ts-ignore: override should completely replace analysis buckets if present
+        // @ts-expect-error: override should completely replace analysis buckets if present
         buckets: {
             ...(override?.buckets ?? entry.analysis.buckets),
         },
@@ -150,19 +109,20 @@ export function getAnalysis(entry: JournalEntry): Analysis {
     };
 }
 
+/**
+ * Get the override buckets for a journal entry
+ * @param entry the journal entry
+ * @param emotions ordered list of emotions from most to least dominant
+ * @returns partial record of Emotion to number
+ */
 export function getOverrideBuckets(entry: JournalEntry, emotions: Emotion[]): Partial<Record<Emotion, number>> {
     const buckets: Partial<Record<Emotion, number>> = {};
     const intensity: number = liftIntensity(entry.analysis.intensity);
 
-    for (const [idx, emotion] of emotions.entries()) {
-        const existingValue = entry?.userOverride?.buckets?.[emotion];
-        if (existingValue !== undefined) {
-            buckets[emotion] = existingValue;
-            continue;
-        }
-        const overrideStrength = Math.max(1 - OVERRIDE_LINEAR_DROP * idx, 0);
-        const overrideValue = intensity * overrideStrength;
-        buckets[emotion] = overrideValue;
-    }
+    emotions.forEach((emotion, idx) => {
+        const weight = Math.max(1 - OVERRIDE_LINEAR_DROP * idx, 0);
+        buckets[emotion] = weight * intensity;
+    });
+
     return buckets;
 }

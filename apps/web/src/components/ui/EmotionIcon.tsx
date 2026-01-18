@@ -1,5 +1,3 @@
-
-import React from "react";
 import classNames from "classnames";
 import { EMOTION_ICONS } from "../../constants/emotionMaps";
 import { Meh } from "lucide-react";
@@ -11,8 +9,7 @@ type Props = {
     size?: number;
 };
 
-function EmotionIcon({ emotion, className, size = 24 }: Props) {
+export default function EmotionIcon({ emotion, className, size = 24 }: Props) {
     const Icon = emotion ? EMOTION_ICONS(emotion) : Meh;
     return <Icon size={size} className={classNames("inline-block", className)} aria-hidden="true" focusable="false" />;
 }
-export default React.memo(EmotionIcon);

@@ -5,6 +5,8 @@ from ml.inference.classifier import EmotionClassifier
 
 
 def analyze_global_emotion_distribution():
+    """Analyze the global distribution of emotion logits using z-scores."""
+
     classifier = EmotionClassifier()
     # Use validation split from load_and_split_lemotif, matching baselines.py
     from ml.utils.data import load_and_split_lemotif

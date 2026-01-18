@@ -14,6 +14,7 @@ from ml.utils.metrics import compute_auc_metrics
 
 
 def save_metrics(cfg, metrics, output_path):
+    """Save evaluation metrics to a JSON file with metadata."""
     metrics_out = {
         "model": cfg["model"]["name"],
         "config": os.getenv("MODEL_CONFIG"),
@@ -28,6 +29,7 @@ def save_metrics(cfg, metrics, output_path):
 
 
 def collect_predictions(model, dataloader, device):
+    """Collect model predictions and true labels from the dataloader."""
     all_logits, all_labels = [], []
     model.eval()
     with torch.no_grad():

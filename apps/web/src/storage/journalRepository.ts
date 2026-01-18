@@ -4,6 +4,10 @@ import { MAX_BUCKETS } from "../constants/chartConstants";
 import { db } from "./JournalDB";
 import type { JournalEntry, UserOverride } from "./JournalDB";
 
+/** Create a new journal entry
+ * @param text journal entry text
+ * @returns the ID of the created journal entry
+ */
 export async function createJournalEntry(
     text: string,
 ): Promise<number> {
@@ -34,7 +38,10 @@ export async function createJournalEntry(
     });
 }
 
-
+/** Update user override for a journal entry
+ * @param id journal entry ID
+ * @param override partial UserOverride object
+ */
 export async function updateUserOverride(id: number, override: Partial<UserOverride>) {
     const updatedAt = Date.now();
 
@@ -51,13 +58,17 @@ export async function updateUserOverride(id: number, override: Partial<UserOverr
     });
 }
 
+/** Patch a journal entry with new emotion analysis result
+ * @param id journal entry ID
+ * @param result RawEmotionResult
+ */
 export async function patchJournalEntryWithResult(id: number, result: RawEmotionResult) {
     const entry = await db.entries.get(id);
     if (!entry) return;
 
     const buckets = Object.fromEntries(
         buildEmotionBuckets(result.emotions, result.intensity)
-            .map(emotionBucket => [emotionBucket.bucket as Emotion, emotionBucket.score])
+            .map(emotionBucket => [emotionBucket.bucket as Emotion, emotionBucket.dominance])
     );
 
     const updatedAt = Date.now();
@@ -76,6 +87,9 @@ export async function patchJournalEntryWithResult(id: number, result: RawEmotion
     });
 }
 
+/** Replace all journal entries in the database
+ * @param entries array of journal entries
+ */
 export async function replaceAllEntries(entries: JournalEntry[]) {
     if (!Array.isArray(entries) || entries.length === 0) return;
 
@@ -95,17 +109,15 @@ export async function clearAllEntries() {
     return db.entries.clear();
 }
 
+/**
+ * Get display-ready buckets sorted by dominance
+ * @param buckets record of emotion buckets
+ * @returns array of [Emotion, number] tuples
+ */
 export function getDisplayBuckets(buckets: Record<Emotion, number>) {
     if (Object.values(buckets).every(v => v === 0)) return [];
 
     return Object.entries(buckets)
         .sort((a, b) => b[1] - a[1])
         .slice(0, MAX_BUCKETS);
-}
-
-export function updateJournalText(id: number, newText: string) {
-    return db.entries.update(id, {
-        text: newText,
-        updatedAt: Date.now(),
-    });
 }

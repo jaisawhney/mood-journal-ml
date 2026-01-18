@@ -6,6 +6,7 @@ import torch
 
 
 def tokenize(batch, tokenizer, max_length):
+    """Tokenize a batch of text inputs."""
     return tokenizer(
         batch["text"],
         truncation=True,
@@ -15,10 +16,12 @@ def tokenize(batch, tokenizer, max_length):
 
 
 def build_multi_hot_from_cols(batch, label_cols):
+    """Build multi-hot encoded labels from specified columns in the batch."""
     return [[float(batch[col][i]) for col in label_cols] for i in range(len(batch["text"]))]
 
 
 def load_go_emotions():
+    """Load and preprocess the GoEmotions dataset."""
     dataset = load_dataset("google-research-datasets/go_emotions", "simplified")
     label_names = dataset["train"].features["labels"].feature.names
     num_labels = len(label_names)
@@ -65,6 +68,7 @@ EMOTION_LABELS = [col.split(".")[2] for col in EMOTION_COLS]
 
 
 def stratified_split(dataset, test_size: float = 0.15, seed: int = 42):
+    """Perform a stratified split of the dataset into train and test sets."""
     labels = np.asarray(dataset["labels"]).astype(np.float32)
     indices = np.arange(len(dataset))
 
@@ -75,6 +79,7 @@ def stratified_split(dataset, test_size: float = 0.15, seed: int = 42):
 
 
 def load_and_split_lemotif(test_size: float = 0.15, seed: int = 42):
+    """Load the Lemotif dataset and split it into train, validation, and test sets."""
     data_path = Path("ml/datasets/lemotif-data-augmented.csv")
     dataset = load_dataset("csv", data_files=str(data_path), split="train").rename_column(
         "Answer", "text"
