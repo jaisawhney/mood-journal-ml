@@ -1,6 +1,8 @@
 import type { JournalEntry } from "../storage/JournalDB";
 import type { Analysis, Emotion } from "../types/types";
 
+//TODO: clean spaghetti code
+
 const POSITIVE_LABELS = new Set([
     "happy", "excited", "satisfied", "proud"
 ]);

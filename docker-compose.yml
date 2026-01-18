@@ -7,5 +7,5 @@ services:
     ports:
       - "8080:80"
     volumes:
-      - ./artifacts/models:/usr/share/nginx/html/api/models:ro
+      - ${MODELS_DIR}:/usr/share/nginx/html/api/models:ro
     restart: unless-stopped

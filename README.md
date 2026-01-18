@@ -18,6 +18,10 @@ Offline-first Progressive Web App (PWA) for multi-label emotion classification a
 
 **Frontend:** React, TypeScript, Vite, Tailwind CSS, Workbox
 
+## Demo
+
+- Live demo: [https://mood-tracker.projects.jaisawhney.me/](https://mood-tracker.projects.jaisawhney.me/)
+
 ## Project Structure
 
 ```
