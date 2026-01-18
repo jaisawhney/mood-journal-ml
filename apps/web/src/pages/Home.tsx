@@ -5,8 +5,10 @@ import { EntryList } from "../components/home/EntryList";
 import TodaySummary from "../components/home/TodaySummary";
 import { useInsightStats } from "../hooks/useInsightStats";
 import { chartXAxisTickCallback, chartYAxisTickCallback } from "../utils/chartUtils";
+import { getPrimaryEmotion } from "../utils/emotionHelpers";
 import { useJournalEntriesForDays } from "../hooks/useJournalEntries";
 import { useMemo } from "react";
+import type { Emotion } from "../types/types";
 Chart.register(CategoryScale, LinearScale, PointElement, LineElement, Tooltip, Legend, Filler);
 
 const HISTORY_DAYS = 14;
@@ -41,8 +43,28 @@ const chartOptions = {
 };
 
 export default function Home() {
-  const { entries: recentEntries } = useJournalEntriesForDays(HISTORY_DAYS);
-  const { overallSeries, dominantEmotion, labels } = useInsightStats(recentEntries, HISTORY_DAYS);
+  const { entries } = useJournalEntriesForDays(HISTORY_DAYS);
+  const { overallSeries, rawSeries, labels } = useInsightStats(entries, HISTORY_DAYS);
+
+  const todayEntries = useMemo(() => {
+    const startOfToday = new Date().setHours(0, 0, 0, 0);
+    return entries.filter(e => e.createdAt >= startOfToday);
+  }, [entries]);
+
+  const todayDominant = useMemo(() => {
+    const lastIndex = labels.length - 1;
+    if (lastIndex < 0) return null;
+
+    const buckets = Object.fromEntries(
+      Object.entries(rawSeries).map(([emotion, values]) => [
+        emotion,
+        values[lastIndex] ?? 0
+      ])
+    ) as Record<Emotion, number>;
+
+    return getPrimaryEmotion(buckets);
+  }, [rawSeries, labels]);
+
   const chartData = useMemo(() => ({
     labels: labels,
     datasets: [
@@ -63,7 +85,7 @@ export default function Home() {
       <div className="page-content-wide md:space-y-10 space-y-5">
         <PageHeader title="Your Mood Overview" description="A snapshot of how you've been feeling recently" />
         <div className="space-y-4">
-          <TodaySummary entriesCount={recentEntries.length} primaryEmotion={dominantEmotion} />
+          <TodaySummary entriesCount={todayEntries.length} primaryEmotion={todayDominant} />
           <section className="card p-6">
             <h2 className="header">Daily Intensity (last {HISTORY_DAYS} days)</h2>
             <div style={{ height: 160 }} className="mt-3">
@@ -71,7 +93,7 @@ export default function Home() {
             </div>
             <p className="text-secondary mt-3">How intense your days felt.</p>
           </section>
-          <EntryList entries={recentEntries} />
+          <EntryList entries={entries} />
         </div>
       </div>
     </div>
