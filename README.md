@@ -2,6 +2,8 @@
 
 Offline-first Progressive Web App (PWA) for multi-label emotion classification and journaling. All inference runs client-side in-browser using a fine-tuned transformer (MiniLM, etc). FastAPI backend serves static assets and model files.
 
+![Alt text for the image](images/home.png)
+
 ## Key Features
 - Offline-first PWA
 	- All inference and journaling run fully client-side via a service worker and Transformer.js
@@ -69,7 +71,7 @@ export MODEL_CONFIG=distilbert.yaml
 python -m ml.training.train
 ```
 
-### Run the backend API
+### FastAPI (development)
 ```bash
 uvicorn apps.api.main:app --reload
 ```
@@ -81,6 +83,17 @@ cd apps/web
 npm install
 npm run dev
 ```
+
+## Docker
+
+Start locally with docker-compose (models mounted from `MODELS_DIR`):
+
+```bash
+export MODELS_DIR=/path/to/models
+docker compose up --build -d
+```
+
+Model files from `MODELS_DIR` are served inside the container at `/api/models`.
 
 ## Testing
 ```bash
