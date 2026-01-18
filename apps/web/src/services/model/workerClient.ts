@@ -42,9 +42,11 @@ export function terminateWebWorker() {
 let running = false;
 export async function startQueueProcessor() {
     if (running) return;
+    running = true;
     try {
         const api = await ensureWorker();
-        api.startQueue();
+        await api.warmup();
+        await api.startQueue();
     } catch (err) {
         running = false;
         console.error("Failed to start worker queue:", err);
@@ -57,7 +59,7 @@ export async function stopQueueProcessor() {
 
     if (apiInstance) {
         try {
-            apiInstance.stopQueue();
+            await apiInstance.stopQueue();
         } catch (err) {
             console.error("Failed to stop worker queue:", err);
         }

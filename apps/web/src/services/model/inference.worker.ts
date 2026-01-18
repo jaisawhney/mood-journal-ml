@@ -92,6 +92,10 @@ const api = {
         return emotionModel.predictEmotions(text);
     },
 
+    async warmup(): Promise<void> {
+        await emotionModel.warmup();
+    },
+
     async startQueue() {
         if (running) return;
         running = true;

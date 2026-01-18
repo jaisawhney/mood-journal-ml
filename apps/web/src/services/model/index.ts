@@ -181,6 +181,16 @@ class EmotionModel {
             intensity: intensityZScore,
         };
     }
+
+    public async warmup(): Promise<void> {
+        try {
+            await Promise.all([this.getTokenizer(), this.getModel()]);
+        } catch (error) {
+            if (this.modelPromise) this.model = undefined;
+            if (this.tokenizerPromise) this.tokenizer = undefined;
+            throw error;
+        }
+    }
 }
 
 export const emotionModel = EmotionModel.getInstance();

@@ -104,7 +104,7 @@
     @apply w-full rounded-lg border border-slate-200 bg-white p-4 text-sm text-neutral-800 placeholder:text-slate-400 focus:border-slate-300 focus:outline-none focus:ring-2 focus:ring-slate-100;
 
     @variant dark {
-      @apply bg-neutral-900 border-none text-neutral-100 placeholder:text-neutral-500 focus:border-none focus:ring-violet-500;
+      @apply bg-neutral-900 border-none text-neutral-100 placeholder:text-neutral-500 focus:border-none focus:ring-blue-500;
     }
   }
 
@@ -196,10 +196,10 @@
   }
 
   .nav-desktop-link-active {
-    @apply bg-violet-100 text-violet-700;
+    @apply bg-blue-100 text-blue-700;
 
     @variant dark {
-      @apply bg-violet-900 text-violet-200;
+      @apply bg-blue-900 text-blue-200;
     }
   }
 
@@ -224,10 +224,10 @@
   }
 
   .nav-mobile-icon-active {
-    @apply bg-violet-100 text-violet-600;
+    @apply bg-blue-100 text-blue-600;
 
     @variant dark {
-      @apply bg-violet-900 text-violet-200;
+      @apply bg-blue-900 text-blue-200;
     }
   }
 
