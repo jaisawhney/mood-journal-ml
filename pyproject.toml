@@ -20,7 +20,7 @@ ml = [
     "pytorch-metric-learning",
     "numpy",
     "scipy",
-    "iterstrat",
+    "iterative-stratification",
     "datasets==4.4.2",
     "scikit-learn==1.8.0",
 ]

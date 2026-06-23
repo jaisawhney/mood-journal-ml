@@ -9,7 +9,7 @@ from ml.utils.config import load_config
 
 
 class EmotionClassifier:
-    """A classifier for predicting emotions and intensity from text inputs."""
+    """A classifier for predicting emotions from text inputs."""
 
     def __init__(self, device: str = None):
         self.cfg = load_config()
@@ -36,10 +36,10 @@ class EmotionClassifier:
         self.labels: List[str] = [label for _, label in sorted(id2label.items())]
 
     @torch.no_grad()
-    def predict_logits(self, texts: List[str]) -> tuple[torch.Tensor, torch.Tensor]:
-        """Predict emotion and intensity logits for a list of texts."""
+    def predict_logits(self, texts: List[str]) -> torch.Tensor:
+        """Predict emotion logits for a list of texts."""
         if not texts:
-            return torch.empty(0, len(self.labels)), torch.empty(0, 1)
+            return torch.empty(0, len(self.labels))
 
         encoded = self.tokenizer(
             texts,
@@ -49,8 +49,7 @@ class EmotionClassifier:
             return_tensors="pt",
         ).to(self.device)
 
-        logits_emotion, logits_intensity = self.model(**encoded)
-        return logits_emotion.cpu(), logits_intensity.cpu()
-
+        logits_emotion = self.model(**encoded)
+        return logits_emotion.cpu()
 
 __all__ = ["EmotionClassifier"]

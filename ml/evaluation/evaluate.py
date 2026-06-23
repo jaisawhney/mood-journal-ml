@@ -36,7 +36,7 @@ def collect_predictions(model, dataloader, device):
         for batch in dataloader:
             labels = batch.pop("labels")
             batch = {k: v.to(device) for k, v in batch.items()}
-            logits_emotion, _ = model(**batch)
+            logits_emotion = model(**batch)
             all_logits.append(logits_emotion.cpu())
             all_labels.append(labels.cpu())
     return torch.cat(all_logits).numpy(), torch.cat(all_labels).numpy()

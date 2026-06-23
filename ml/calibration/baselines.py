@@ -26,26 +26,15 @@ def main(batch_size: int = 32) -> None:
     texts = val_dataset["text"]
 
     emotion_logits = []
-    intensity_logits = []
     for i in range(0, len(texts), batch_size):
-        logits_emotion, logits_intensity = classifier.predict_logits(texts[i : i + batch_size])
+        logits_emotion = classifier.predict_logits(texts[i : i + batch_size])
         emotion_logits.append(logits_emotion)
-        intensity_logits.append(logits_intensity)
 
     emotion_tensor = torch.cat(emotion_logits)
-    intensity_tensor = torch.cat(intensity_logits)
 
     label_baselines = compute_label_baselines(emotion_tensor, classifier.labels)
 
-    baselines = {
-        "emotion": label_baselines,
-        "intensity": {
-            "mean": intensity_tensor.mean().item(),
-            "std": intensity_tensor.std().item(),
-            "min": intensity_tensor.min().item(),
-            "max": intensity_tensor.max().item(),
-        },
-    }
+    baselines = {"emotion": label_baselines}
 
     output_path = Path(classifier.cfg["paths"]["artifacts_dir"]) / "final_model" / "baselines.json"
     with open(output_path, "w") as f:

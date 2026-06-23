@@ -36,12 +36,11 @@ def export_onnx_torch(model, tokenizer, onnx_path: Path, max_length=128):
         (dummy["input_ids"], dummy["attention_mask"]),
         onnx_path,
         input_names=["input_ids", "attention_mask"],
-        output_names=["logits_emotion", "logits_intensity"],
+        output_names=["logits_emotion"],
         dynamic_axes={
             "input_ids": {0: "batch", 1: "sequence_length"},
             "attention_mask": {0: "batch", 1: "sequence_length"},
             "logits_emotion": {0: "batch"},
-            "logits_intensity": {0: "batch"},
         },
     )
 

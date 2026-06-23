@@ -70,7 +70,7 @@ def train_go_emotions():
         eval_strategy="epoch",
         save_strategy="epoch",
         load_best_model_at_end=True,
-        metric_for_best_model="macro_auc",
+        metric_for_best_model="macro_pr_auc",
         greater_is_better=True,
         seed=cfg["training"]["goemotions"]["seed"],
         learning_rate=float(cfg["training"]["goemotions"]["learning_rate"]),
@@ -141,7 +141,7 @@ class MultiLabelEmotionMiner(miners.BaseMiner):
 class EmotionModel(PreTrainedModel):
     config_class = AutoConfig
 
-    def __init__(self, config, neutral_baseline_logits=None, intensity_prior=None):
+    def __init__(self, config, neutral_baseline_logits=None):
         super().__init__(config)
 
         self.encoder = AutoModel.from_config(config)
@@ -153,21 +153,14 @@ class EmotionModel(PreTrainedModel):
             with torch.no_grad():
                 self.emotion_head.bias.copy_(neutral_baseline_logits)
 
-        self.intensity_projection = nn.Linear(hidden, hidden)
-        self.intensity_head = nn.Linear(hidden, 1)
-        if intensity_prior is not None:
-            with torch.no_grad():
-                self.intensity_head.bias.fill_(intensity_prior)
-
         self.metric_loss = losses.MultiSimilarityLoss(alpha=2, beta=5, base=0.4)
         self.miner = MultiLabelEmotionMiner(overlap_threshold=0.15)
-
+        self.norm = nn.LayerNorm(hidden)
     def forward(
         self,
         input_ids=None,
         attention_mask=None,
         labels=None,
-        intensity=None,
         return_embeddings: bool = False,
         **kwargs,
     ):
@@ -179,15 +172,17 @@ class EmotionModel(PreTrainedModel):
         mask = attention_mask.unsqueeze(-1).float()
         pooled = (outputs.last_hidden_state * mask).sum(dim=1) / mask.sum(dim=1)
 
-        emotion_features = F.gelu(self.emotion_projection(pooled))
-        intensity_features = F.gelu(self.intensity_projection(pooled))
-
-        logits_emotion = self.emotion_head(emotion_features)
-        logits_intensity = self.intensity_head(intensity_features)
+        metric_embedding = F.normalize(pooled, dim=1)
+        
+        emotion_features = F.gelu(
+            self.emotion_projection(self.norm(pooled))
+        )
+        
+        logits = self.emotion_head(emotion_features)
 
         if return_embeddings:
-            return logits_emotion, logits_intensity, emotion_features, intensity_features
-        return logits_emotion, logits_intensity
+            return logits, metric_embedding
+        return logits
 
 
 class MultiLabelTrainer(Trainer):
@@ -197,44 +192,20 @@ class MultiLabelTrainer(Trainer):
 
     def compute_loss(self, model, inputs, return_outputs=False, **kwargs):
         labels = inputs.pop("labels").float()
-        intensity_target = inputs.pop("intensity").float().unsqueeze(1)
 
-        logits_emotion, logits_intensity, emotion_features, _ = model(
-            **inputs, return_embeddings=True
-        )
-        embeddings_emotion = F.normalize(emotion_features, dim=1)
+        logits, metric_embedding = model(**inputs, return_embeddings=True)
 
         emotion_loss = F.binary_cross_entropy_with_logits(
-            logits_emotion,
+            logits,
             labels,
             pos_weight=self.pos_weight,
             reduction="mean",
         )
 
-        is_neutral_mask = (labels.sum(dim=1) == 0).bool()
-
-        emotion_conf = torch.sigmoid(logits_emotion).amax(dim=1).detach()
-        neutral_like = is_neutral_mask | (emotion_conf < 0.05)
-
-        non_neutral_like = ~neutral_like
-        if non_neutral_like.any():
-            non_neutral_loss = F.l1_loss(
-                logits_intensity[non_neutral_like], intensity_target[non_neutral_like]
-            )
-        else:
-            non_neutral_loss = torch.tensor(0.0, device=logits_intensity.device)
-
-        if neutral_like.any():
-            neutral_loss = torch.clamp(logits_intensity[neutral_like].abs() - 0.05, min=0.0).mean()
-        else:
-            neutral_loss = torch.tensor(0.0, device=logits_intensity.device)
-
-        intensity_loss = non_neutral_loss + neutral_loss * 3.0
-
         # https://github.com/KevinMusgrave/pytorch-metric-learning/issues/178#issuecomment-675611566
         # Prepare indices tuple for metric loss following the GitHub issue above (no native support for multi-label)
         valid = labels.sum(dim=1) > 0
-        embeddings_emotion_valid = embeddings_emotion[valid]
+        embeddings_emotion_valid = metric_embedding[valid]
         labels_valid = labels[valid]
 
         with torch.no_grad():
@@ -246,16 +217,14 @@ class MultiLabelTrainer(Trainer):
                 indices_tuple=pairs,
             )
         else:
-            loss_metric = torch.tensor(0.0, device=embeddings_emotion.device)
+            loss_metric = torch.tensor(0.0, device=metric_embedding.device)
 
-        w_int = cfg["training"]["lemotif"]["common"]["intensity_loss_weight"]
         w_met = cfg["training"]["lemotif"]["common"]["metric_loss_weight"]
 
-        loss = emotion_loss + w_int * intensity_loss + w_met * loss_metric
+        loss = emotion_loss + w_met * loss_metric
         if return_outputs:
             return loss, {
-                "logits": logits_emotion,
-                "intensity": logits_intensity,
+                "logits": logits,
             }
         return loss
 
@@ -284,15 +253,10 @@ def train_lemotif():
     priors = labels.mean(dim=0)
     neutral_baseline_logits = torch.log(priors / (1 - priors + 1e-5))
 
-    all_intensities = torch.as_tensor(tokenized["train"]["intensity"], dtype=torch.float32)
-    intensity_median = all_intensities.median()
-
     model = EmotionModel(
         config,
         neutral_baseline_logits=neutral_baseline_logits.cpu(),
-        intensity_prior=float(intensity_median),
     )
-
     common_cfg = cfg["training"]["lemotif"]["common"]
     frozen_cfg = cfg["training"]["lemotif"]["frozen"]
     unfrozen_cfg = cfg["training"]["lemotif"]["unfrozen"]
@@ -302,7 +266,7 @@ def train_lemotif():
         eval_strategy="epoch",
         save_strategy="epoch",
         load_best_model_at_end=True,
-        metric_for_best_model="macro_auc",
+        metric_for_best_model="macro_pr_auc",
         greater_is_better=True,
         seed=int(common_cfg["seed"]),
         learning_rate=float(frozen_cfg["learning_rate"]),
@@ -313,7 +277,7 @@ def train_lemotif():
         lr_scheduler_type=frozen_cfg["lr_scheduler_type"],
         warmup_ratio=float(frozen_cfg["warmup_ratio"]),
         gradient_accumulation_steps=int(common_cfg["gradient_accumulation_steps"]),
-        label_names=["labels", "intensity"],
+        label_names=["labels"],
         report_to="none",
         bf16=getattr(torch.cuda, "is_bf16_supported", lambda: False)(),
         fp16=False,
@@ -321,7 +285,7 @@ def train_lemotif():
 
     pos_counts = labels.sum(dim=0)
     neg_counts = labels.shape[0] - pos_counts
-    pos_weight = (neg_counts / (pos_counts + 1e-5)).clamp(max=2.0)
+    pos_weight = torch.log1p(neg_counts / (pos_counts + 1e-5))
     pos_weight_frozen = pos_weight.to(args_frozen.device)
 
     trainer_frozen = MultiLabelTrainer(
@@ -352,7 +316,7 @@ def train_lemotif():
         eval_strategy="epoch",
         save_strategy="epoch",
         load_best_model_at_end=True,
-        metric_for_best_model="macro_auc",
+        metric_for_best_model="macro_pr_auc",
         greater_is_better=True,
         seed=int(common_cfg["seed"]),
         learning_rate=float(unfrozen_cfg["learning_rate"]),
@@ -362,7 +326,7 @@ def train_lemotif():
         num_train_epochs=int(unfrozen_cfg["num_epochs"]),
         warmup_ratio=float(unfrozen_cfg["warmup_ratio"]),
         gradient_accumulation_steps=int(common_cfg["gradient_accumulation_steps"]),
-        label_names=["labels", "intensity"],
+        label_names=["labels"],
         report_to="none",
         bf16=getattr(torch.cuda, "is_bf16_supported", lambda: False)(),
         fp16=False,
@@ -391,8 +355,6 @@ def train_lemotif():
     trainer_unfrozen.train(resume_from_checkpoint=False)
     trainer_unfrozen.save_model(Path(OUTPUT_DIR) / "final_model")
     tokenizer.save_pretrained(Path(OUTPUT_DIR) / "final_model")
-
-
 if __name__ == "__main__":
     train_go_emotions()
     train_lemotif()

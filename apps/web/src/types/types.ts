@@ -10,12 +10,10 @@ export type Emotion =
 
 export type RawEmotionResult = {
     emotions: Record<Emotion, number> | {};
-    intensity: number;
 };
 
 
 export type Analysis = {
     buckets: Record<Emotion, number>;
-    intensity: number;
     isOverridden: boolean;
 };

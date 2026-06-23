@@ -3,19 +3,16 @@ import type { Emotion } from '../types/types';
 
 export type Analysis = {
     buckets: Record<Emotion, number>;
-    intensity: number;
 };
 
 export type UserOverride = {
     buckets?: Partial<Record<Emotion, number>>;
-    intensity?: number;
     note?: string;
     updatedAt: number;
 };
 
 export type RawEmotionOutput = {
     emotions: Record<string, number>;
-    intensity?: number;
     modelVersion: string;
 };
 

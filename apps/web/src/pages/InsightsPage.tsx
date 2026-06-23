@@ -159,11 +159,11 @@ export default function InsightsPage() {
                         <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
                             <div className="text-center">
                                 <p className="text-secondary">Last {range.label}</p>
-                                <p className="text-lg font-medium">Intensity</p>
+                                <p className="text-lg font-medium">Emotion mix</p>
                             </div>
                         </div>
                     </div>
-                    <p className="text-secondary">Emotional makeup over the last {range.label}</p>
+                    <p className="text-secondary">Emotion balance over the last {range.label}</p>
                 </section>
                 <section className="card p-6 space-y-4">
                     <div className="flex items-center justify-between">
@@ -175,7 +175,7 @@ export default function InsightsPage() {
                     <div className="h-[180px]">
                         <Line data={lineData} options={lineOptions} />
                     </div>
-                    <p className="text-secondary">Relative intensity of <strong>{selectedEmotion.toLowerCase()}</strong> over time.</p>
+                    <p className="text-secondary">Relative signal of <strong>{selectedEmotion.toLowerCase()}</strong> over time.</p>
                 </section>
             </div>
         </div>

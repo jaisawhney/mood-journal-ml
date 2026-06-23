@@ -87,11 +87,11 @@ export default function Home() {
         <div className="space-y-4">
           <TodaySummary entriesCount={todayEntries.length} primaryEmotion={todayDominant} />
           <section className="card p-6">
-            <h2 className="header">Daily Intensity (last {HISTORY_DAYS} days)</h2>
+            <h2 className="header">Daily signal (last {HISTORY_DAYS} days)</h2>
             <div style={{ height: 160 }} className="mt-3">
               <Line data={chartData} options={chartOptions} />
             </div>
-            <p className="text-secondary mt-3">How intense your days felt.</p>
+            <p className="text-secondary mt-3">How strongly your emotion profile changed over time.</p>
           </section>
           <EntryList entries={entries} />
         </div>

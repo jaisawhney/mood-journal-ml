@@ -88,12 +88,11 @@ def load_and_split_lemotif(test_size: float = 0.15, seed: int = 42):
     dataset = dataset.map(
         lambda batch: {
             "labels": build_multi_hot_from_cols(batch, EMOTION_COLS),
-            "intensity": [float(x) for x in batch["intensity"]],
         },
         batched=True,
     )
     dataset = dataset.remove_columns(
-        [col for col in dataset.column_names if col not in ["text", "labels", "intensity"]]
+        [col for col in dataset.column_names if col not in ["text", "labels"]]
     )
 
     train_ds, test_ds = stratified_split(dataset, test_size=test_size, seed=seed)

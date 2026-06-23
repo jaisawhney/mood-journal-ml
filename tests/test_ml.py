@@ -44,7 +44,6 @@ def test_calibration_baselines_file_serialization():
         baseline_path = os.path.join(tmpdir, "baselines.json")
         sample_baselines = {
             "emotion": {"happy": {"mean": 0.0, "std": 1.0, "min": -1.0, "max": 1.0}},
-            "intensity": {"mean": 0.0, "min": -1.0, "max": 1.0},
         }
         with open(baseline_path, "w") as f:
             json.dump(sample_baselines, f)
@@ -54,12 +53,9 @@ def test_calibration_baselines_file_serialization():
         with open(baseline_path, "r") as f:
             loaded = json.load(f)
         assert "emotion" in loaded
-        assert "intensity" in loaded
         assert "happy" in loaded["emotion"]
         for stat in ["mean", "std", "min", "max"]:
             assert stat in loaded["emotion"]["happy"]
-        for stat in ["mean", "min", "max"]:
-            assert stat in loaded["intensity"]
 
 
 # Evaluation tests
@@ -107,9 +103,8 @@ def test_training_emotion_model_forward():
     model = EmotionModel(config)
     input_ids = torch.ones((2, 10), dtype=torch.long)
     attention_mask = torch.ones((2, 10), dtype=torch.long)
-    logits_emotion, logits_intensity = model(input_ids=input_ids, attention_mask=attention_mask)
+    logits_emotion = model(input_ids=input_ids, attention_mask=attention_mask)
     assert logits_emotion.shape == (2, 2)
-    assert logits_intensity.shape == (2, 1)
 
 
 # Inference tests
@@ -122,16 +117,12 @@ def test_inference_classifier_loads(classifier):
 
 def test_inference_predict_logits_shape(classifier):
     texts = ["I am happy.", "I am sad."]
-    logits_emotion, logits_intensity = classifier.predict_logits(texts)
+    logits_emotion = classifier.predict_logits(texts)
     assert isinstance(logits_emotion, torch.Tensor)
-    assert isinstance(logits_intensity, torch.Tensor)
     assert logits_emotion.shape[0] == len(texts)
     assert logits_emotion.shape[1] == len(classifier.labels)
-    assert logits_intensity.shape[0] == len(texts)
-    assert logits_intensity.shape[1] == 1
 
 
 def test_inference_predict_logits_empty(classifier):
-    logits_emotion, logits_intensity = classifier.predict_logits([])
+    logits_emotion = classifier.predict_logits([])
     assert logits_emotion.shape[0] == 0
-    assert logits_intensity.shape[0] == 0

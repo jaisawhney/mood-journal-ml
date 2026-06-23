@@ -1,47 +1,37 @@
 import numpy as np
-from sklearn.calibration import expit
-from sklearn.metrics import roc_auc_score
-from scipy.stats import spearmanr
+from scipy.special import expit
+from sklearn.metrics import roc_auc_score, average_precision_score
 
 
-# this function is used for both emotion and intensity metrics
 def compute_metrics(eval_pred):
     """Compute evaluation metrics given predictions and labels."""
     predictions, labels = eval_pred
-    if isinstance(predictions, tuple) or isinstance(predictions, list):
-        emotion_logits, intensity_logits = predictions
-        labels, intensity_labels = labels
-    else:
-        emotion_logits = predictions
-        intensity_logits = None
-        intensity_labels = None
+    emotion_logits = predictions
 
     probs = expit(emotion_logits)
-    micro_auc = roc_auc_score(labels.ravel(), probs.ravel())
+    micro_auc = roc_auc_score(labels, probs, average="micro")
+    macro_auc = roc_auc_score(labels, probs, average="macro")
 
-    aucs = []
-    for i in range(labels.shape[1]):
-        y = labels[:, i]
-        if np.unique(y).size < 2:
-            continue
-        aucs.append(roc_auc_score(y, probs[:, i]))
-
+    micro_pr_auc = average_precision_score(labels, probs, average="micro")
+    macro_pr_auc = average_precision_score(labels, probs, average="macro")
+        
     metrics = {
         "micro_auc": float(micro_auc),
-        "macro_auc": float(np.mean(aucs)),
+        "macro_auc": float(macro_auc),
+        "micro_pr_auc": float(micro_pr_auc),
+        "macro_pr_auc": float(macro_pr_auc),
     }
-
-    if intensity_logits is not None and intensity_labels is not None:
-        metrics["intensity_spearmanr"] = float(
-            spearmanr(intensity_labels, intensity_logits).correlation
-        )
     return metrics
 
 
 def compute_auc_metrics(logits, labels, label_names=None):
     """Compute AUC metrics for multi-label classification."""
     probs = expit(logits)
-    micro_auc = roc_auc_score(labels.ravel(), probs.ravel())
+    micro_auc = roc_auc_score(labels, probs, average="micro")
+    macro_auc = roc_auc_score(labels, probs, average="macro")
+
+    micro_pr_auc = average_precision_score(labels, probs, average="micro")
+    macro_pr_auc = average_precision_score(labels, probs, average="macro")
 
     aucs = []
     per_label_aucs = []
@@ -59,7 +49,9 @@ def compute_auc_metrics(logits, labels, label_names=None):
 
     return {
         "micro_auc": float(micro_auc),
-        "macro_auc": float(np.mean(aucs)) if aucs else 0.0,
+        "macro_auc": float(macro_auc),
         "per_label_auc": per_label_aucs,
         "label_names": label_names,
+        "micro_pr_auc": float(micro_pr_auc),
+        "macro_pr_auc": float(macro_pr_auc),
     }

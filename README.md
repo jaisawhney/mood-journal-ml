@@ -47,7 +47,7 @@ Offline-first Progressive Web App (PWA) for multi-label emotion classification a
 
 ## Datasets
 - GoEmotions (Demszky et al., ACL 2020): First-stage fine-tuning
-- Lemotif (Li & Parikh, arXiv 2019): Main dataset, augmented with synthetic entries for rare emotions, intensity, and neutral baseline
+- Lemotif (Li & Parikh, arXiv 2019): Main dataset, augmented with synthetic entries for rare emotions and a neutral baseline
 
 ## Notebooks
 - `01_dataset_exploration.ipynb`: EDA
@@ -68,7 +68,7 @@ pip install -e ".[api,ml,dev]"
 ### Train the model
 ```bash
 export MODEL_CONFIG=distilbert.yaml
-python -m ml.training.train
+python -m ml.training.trainer
 ```
 
 ### FastAPI (development)
