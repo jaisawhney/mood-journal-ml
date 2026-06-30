@@ -65,7 +65,7 @@ export async function patchJournalEntryWithResult(id: number, result: RawEmotion
     if (!entry) return;
 
     const buckets = Object.fromEntries(
-        buildEmotionBuckets(result.emotions)
+        buildEmotionBuckets(result.probabilities)
             .map(emotionBucket => [emotionBucket.bucket as Emotion, emotionBucket.dominance])
     );
 
@@ -73,7 +73,7 @@ export async function patchJournalEntryWithResult(id: number, result: RawEmotion
 
     return db.entries.update(id, {
         raw: {
-            emotions: result.emotions,
+            emotions: result.probabilities,
             modelVersion: "emotion-v1",
         },
         analysis: {

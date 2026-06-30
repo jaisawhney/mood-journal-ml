@@ -9,7 +9,8 @@ export type Emotion =
     | "Anticipation";
 
 export type RawEmotionResult = {
-    emotions: Record<Emotion, number> | {};
+    probabilities: Record<Emotion, number> | {};
+    predictions: Record<Emotion, boolean> | {};
 };
 
 
@@ -17,3 +18,5 @@ export type Analysis = {
     buckets: Record<Emotion, number>;
     isOverridden: boolean;
 };
+
+export type Calibration = Record<string, number>;

@@ -28,8 +28,8 @@ async function processOneJob(): Promise<boolean> {
     try {
         const entry = await db.entries.get(job.entryId);
         if (!entry) throw new Error(`Journal entry with ID ${job.entryId} not found.`);
-        const result = await emotionModel.predictEmotions(entry.text);
-        await patchJournalEntryWithResult(entry.id!, result);
+        const { predictions, probabilities } = await emotionModel.predictEmotions(entry.text);
+        await patchJournalEntryWithResult(entry.id!, { predictions, probabilities });
         await db.queue.delete(job.id!);
         return true;
     } catch (error) {

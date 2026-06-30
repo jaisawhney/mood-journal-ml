@@ -16,6 +16,8 @@ export type BucketResult = {
     dominance: number;
 };
 
+//TODO: All of this needs to be refactored to use the new emotion model output format, which is a probabilities object instead of an emotions object.
+
 /**
  * Build emotion buckets from raw emotions
  * @param emotions the raw emotions
