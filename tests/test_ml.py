@@ -1,128 +1,109 @@
-import os
-import json
-import tempfile
-import torch
 import numpy as np
 import pytest
+from setfit import SetFitModel
 
-from pathlib import Path
-from transformers import AutoConfig
+from ml.inference import (
+    DEVICE,
+    lse_pool,
+    optimize_thresholds,
+    predict_document_logits,
+    predict_document_proba,
+    segment_sentences,
+)
 
-from ml.calibration import baselines
-from ml.training.trainer import EmotionModel
-from ml.export import onnx
-from ml.utils.metrics import compute_metrics, compute_auc_metrics
-
-from ml.inference.classifier import EmotionClassifier
+MODEL_PATH = "artifacts/experiments/journaling_model/v1"
 
 
 @pytest.fixture(scope="module")
-def classifier():
-    return EmotionClassifier()
+def model():
+    return SetFitModel.from_pretrained(
+        MODEL_PATH,
+        device=DEVICE,
+    )
 
 
-# Calibration tests
-def test_calibration_baselines_output():
-    logits = torch.randn(10, 3)
-    labels = ["happy", "sad", "angry"]
-    result = baselines.compute_label_baselines(logits, labels)
-    assert set(result.keys()) == set(labels)
-    for v in result.values():
-        assert "mean" in v and "std" in v and "min" in v and "max" in v
-
-    for label_baseline in result.values():
-        assert (
-            "mean" in label_baseline
-            and "std" in label_baseline
-            and "min" in label_baseline
-            and "max" in label_baseline
-        )
+def test_segment_sentences_empty():
+    assert segment_sentences("") == []
 
 
-def test_calibration_baselines_file_serialization():
-    with tempfile.TemporaryDirectory() as tmpdir:
-        baseline_path = os.path.join(tmpdir, "baselines.json")
-        sample_baselines = {
-            "emotion": {"happy": {"mean": 0.0, "std": 1.0, "min": -1.0, "max": 1.0}},
-        }
-        with open(baseline_path, "w") as f:
-            json.dump(sample_baselines, f)
-        assert os.path.exists(baseline_path)
-
-        # Load and validate baselines file
-        with open(baseline_path, "r") as f:
-            loaded = json.load(f)
-        assert "emotion" in loaded
-        assert "happy" in loaded["emotion"]
-        for stat in ["mean", "std", "min", "max"]:
-            assert stat in loaded["emotion"]["happy"]
+def test_segment_sentences_single():
+    assert segment_sentences("Hello world.") == ["Hello world."]
 
 
-# Evaluation tests
-def test_evaluation_compute_metrics():
-    logits = np.array([[0.5, 1.0], [1.5, -1.0]])
-    labels = np.array([[1, 0], [0, 1]])
-    eval_pred = (logits, labels)
-    metrics = compute_metrics(eval_pred)
-    assert "micro_auc" in metrics
-    assert "macro_auc" in metrics
+def test_segment_sentences_overlapping():
+    assert segment_sentences("Hello world. How are you? I'm fine.") == [
+        "Hello world.",
+        "Hello world. How are you?",
+        "How are you? I'm fine.",
+    ]
 
 
-def test_evaluation_compute_auc_metrics():
-    logits = np.array([[0.5, 1.0], [1.5, -1.0]])
-    labels = np.array([[1, 0], [0, 1]])
-    result = compute_auc_metrics(logits, labels, label_names=["happy", "sad"])
-    assert "micro_auc" in result
-    assert "macro_auc" in result
-    assert "per_label_auc" in result
-    assert result["label_names"] == ["happy", "sad"]
+def test_lse_pool_shape():
+    logits = np.random.randn(5, 13)
+
+    pooled = lse_pool(logits)
+
+    assert pooled.shape == (13,)
 
 
-# Export tests
-def test_export_onnx_torch_runs():
-    config = AutoConfig.from_pretrained("distilbert-base-uncased", num_labels=2)
-    model = EmotionModel(config)
+def test_lse_pool_single_chunk_identity():
+    logits = np.random.randn(1, 13)
 
-    class DummyTokenizer:
-        def __call__(self, texts, **kwargs):
-            return {
-                "input_ids": torch.ones((2, 10), dtype=torch.long),
-                "attention_mask": torch.ones((2, 10), dtype=torch.long),
-            }
+    pooled = lse_pool(logits)
 
-    tokenizer = DummyTokenizer()
-    with tempfile.TemporaryDirectory() as tmpdir:
-        onnx_path = Path(tmpdir) / "model.onnx"
-        onnx.export_onnx_torch(model, tokenizer, onnx_path, max_length=10)
-        assert onnx_path.exists()
+    np.testing.assert_allclose(
+        pooled,
+        logits.squeeze(),
+        atol=1e-6,
+    )
 
 
-# Training tests
-def test_training_emotion_model_forward():
-    config = AutoConfig.from_pretrained("distilbert-base-uncased", num_labels=2)
-    model = EmotionModel(config)
-    input_ids = torch.ones((2, 10), dtype=torch.long)
-    attention_mask = torch.ones((2, 10), dtype=torch.long)
-    logits_emotion = model(input_ids=input_ids, attention_mask=attention_mask)
-    assert logits_emotion.shape == (2, 2)
+def test_predict_document_logits_shape(model):
+    texts = [
+        "I feel great today.",
+        "Everything is terrible.",
+    ]
+
+    logits = predict_document_logits(model, texts)
+
+    assert logits.shape == (2, 13)
 
 
-# Inference tests
-def test_inference_classifier_loads(classifier):
-    assert hasattr(classifier, "model")
-    assert hasattr(classifier, "tokenizer")
-    assert isinstance(classifier.labels, list)
-    assert len(classifier.labels) > 0
+def test_predict_document_proba_shape(model):
+    texts = [
+        "Happy.",
+        "Sad.",
+    ]
+
+    probs = predict_document_proba(model, texts)
+
+    assert probs.shape == (2, 13)
+    assert np.all(probs >= 0.0)
+    assert np.all(probs <= 1.0)
 
 
-def test_inference_predict_logits_shape(classifier):
-    texts = ["I am happy.", "I am sad."]
-    logits_emotion = classifier.predict_logits(texts)
-    assert isinstance(logits_emotion, torch.Tensor)
-    assert logits_emotion.shape[0] == len(texts)
-    assert logits_emotion.shape[1] == len(classifier.labels)
+def test_optimize_thresholds_shape():
+    y_true = np.array(
+        [
+            [1, 0],
+            [0, 1],
+            [1, 1],
+        ]
+    )
 
+    y_score = np.array(
+        [
+            [0.9, 0.2],
+            [0.1, 0.8],
+            [0.7, 0.9],
+        ]
+    )
 
-def test_inference_predict_logits_empty(classifier):
-    logits_emotion = classifier.predict_logits([])
-    assert logits_emotion.shape[0] == 0
+    thresholds = optimize_thresholds(
+        y_true,
+        y_score,
+    )
+
+    assert thresholds.shape == (2,)
+    assert np.all(thresholds >= 0.0)
+    assert np.all(thresholds <= 1.0)

@@ -1,22 +1,25 @@
 # Mood Journal
 
-Offline-first Progressive Web App (PWA) for multi-label emotion classification and journaling. All inference runs client-side in-browser using a fine-tuned transformer (MiniLM, etc). FastAPI backend serves static assets and model files.
+Offline-first Progressive Web App (PWA) for multi-label emotion classification and journaling. Emotion classification is powered by a fine-tuned SetFit model using MiniLM embeddings, with inference running entirely client-side via ONNX Runtime Web and Transformers.js
 
-![Alt text for the image](images/home.png)
+FastAPI serves the web application and model assets; all inference is executed locally in the browser.
+
+![Home page](images/home.png)
 
 ## Key Features
 - Offline-first PWA
-	- All inference and journaling run fully client-side via a service worker and Transformer.js
+	- All inference and journaling run fully client-side via a service worker and Transformers.js
 	- Emotion analysis is performed locally in the browser so no user data or journal entries ever leave the device
 - Service worker powered by Workbox
-	- Pre-caches all model files and ONNX files for in-browser offline ML inference
+	- Pre-caches the ONNX model and tokenizer assets required for offline inference
 	- After first load, all features (including ML) work fully offline (offline-first caching strategy)
 - Multi-label emotion classification
-	- Two-stage fine-tuning: GoEmotions (general emotions), Lemotif (journal style)
+	- Fine-tuned SetFit (MiniLM) classifier predicts multiple emotions from a single journal entry
+	- SetFit was selected because it provides strong performance on limited labeled datasets
 
 ## Tech Stack
 
-**Backend/ML:** Python, FastAPI, PyTorch, Transformers, ONNX
+**Backend/ML:** Python, FastAPI, PyTorch, Transformers, ONNX Runtime
 
 **Frontend:** React, TypeScript, Vite, Tailwind CSS, Workbox
 
@@ -26,33 +29,50 @@ Offline-first Progressive Web App (PWA) for multi-label emotion classification a
 
 ## Project Structure
 
-```
+```text
 ├── apps/
-│   ├── api/            # FastAPI backend for emotion classification
-│   └── web/            # Web app frontend
+│   ├── api/            # FastAPI backend
+│   └── web/            # React/Vite frontend
+├── docker/             # Container configuration
+├── images/             # README assets
 ├── ml/
-│   ├── training/       # Model training scripts
-│   ├── inference/      # Inference wrapper
-│   ├── evaluation/     # Analysis and metrics
-│   ├── calibration/    # Calibration scripts
-│   ├── datasets/       # Datasets
-│   ├── export/         # ONNX export
-│   ├── utils/          # Helpers
-│   ├── configs/        # YAML configs
-├── docker/             # Dockerfile(s) and deployment helpers
-├── notebooks/          # Jupyter notebooks
-├── tests/              # Pytest
-└── pyproject.toml      # Python project configuration
+│   ├── config.py       # Typed config loader
+│   ├── config.yaml     # Project configuration
+│   ├── data.py         # Dataset loading
+│   ├── datasets/       # Train/validation/test datasets
+│   ├── export.py       # ONNX export pipeline
+│   ├── inference.py    # Document-level inference
+│   ├── evaluate.py     # Model benchmarking
+│   ├── trainer.py      # SetFit training
+│   └── validate.py     # Model evaluation
+├── notebooks/          # Experimentation
+├── tests/              # Test suite
+├── pyproject.toml
+└── README.md
 ```
+
+## Model Performance
+
+| Metric | Score |
+|--------|------:|
+| Macro F1 | 0.417 |
+| Micro F1 | 0.548 |
+| Macro ROC AUC | 0.804 |
+| Hamming Loss | 0.176 |
+
+The dataset is highly imbalanced across emotion labels. Despite class rebalancing and hyperparameter optimization, minority classes remain the main source of prediction error.
 
 ## Datasets
-- GoEmotions (Demszky et al., ACL 2020): First-stage fine-tuning
-- Lemotif (Li & Parikh, arXiv 2019): Main dataset, augmented with synthetic entries for rare emotions and a neutral baseline
+- Lemotif (Li & Parikh, arXiv 2019): Journaling dataset derived from personal journal entries, used for fine-tuning and evaluation
+
+## Data Preprocessing:
+- Undersampling of majority classes to reduce class imbalance
 
 ## Notebooks
-- `01_dataset_exploration.ipynb`: EDA
-- `02_model_comparison_emotion.ipynb`: Model comparison
-- `03_data_augmentation_analysis.ipynb`: Augmentation
+- `01_dataset_exploration.ipynb`: Exploratory Data Analysis
+- `02_data_preprocessing.ipynb`: Data Preprocessing & Class Rebalancing
+- `03_hyperparameter_optimization.ipynb`: Hyperparameter Optimization (Optuna)
+- `04_final_model_evaluation.ipynb`: Final Model Evaluation
 
 ## Installation & Usage
 
@@ -67,8 +87,7 @@ pip install -e ".[api,ml,dev]"
 
 ### Train the model
 ```bash
-export MODEL_CONFIG=distilbert.yaml
-python -m ml.training.trainer
+python -m ml.trainer
 ```
 
 ### FastAPI (development)
@@ -103,4 +122,3 @@ pytest
 ## References
 
 - Dataset: `lemotif` (Li & Parikh, arXiv 2019)
-- Dataset: `goemotions` (Demszky et al., ACL 2020)

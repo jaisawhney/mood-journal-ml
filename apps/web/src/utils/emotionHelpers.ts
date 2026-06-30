@@ -2,14 +2,11 @@ import type { JournalEntry } from "../storage/JournalDB";
 import type { Analysis, Emotion } from "../types/types";
 
 const EMOTION_MAP: Record<string, string[]> = {
-    "Joy": ["happy", "satisfied", "proud"],
-    "Trust": ["calm"],
-    "Fear": ["afraid", "anxious", "awkward"],
+    "Joy": ["happy", "satisfied", "proud", "excited"],
+    "Fear": ["anxious"],
     "Surprise": ["surprised"],
-    "Sadness": ["sad", "jealous", "nostalgic"],
-    "Disgust": ["disgusted", "ashamed"],
+    "Sadness": ["sad", "nostalgic"],
     "Anger": ["angry", "frustrated"],
-    "Anticipation": ["excited"],
 };
 
 const OVERRIDE_LINEAR_DROP = 0.2;

@@ -1,0 +1,55 @@
+project:
+  seed: 42
+
+dataset:
+  train: data/train_preprocessed.csv
+  validation: data/validation.csv
+  test: data/test.csv
+
+model:
+  base: sentence-transformers/all-MiniLM-L12-v2
+  version: v1
+  labels:
+    - angry
+    - anxious
+    - bored
+    - calm
+    - confused
+    - excited
+    - frustrated
+    - happy
+    - nostalgic
+    - proud
+    - sad
+    - satisfied
+    - surprised
+
+training:
+  output_dir: artifacts/experiments/journaling_model/v1
+
+  batch_size:
+    embedding: 16
+    classifier: 2
+
+  epochs:
+    embedding: 5
+    classifier: 16
+
+  body_learning_rate: 1.0753705701228238e-5
+  head_learning_rate: 1.786256173201144e-2
+  l2_weight: 3.3482142116517545e-4
+
+  sampling_strategy: oversampling
+  #num_iterations: 10
+  max_length: 128
+
+inference:
+  tau: 1.0
+
+export:
+  output_dir: artifacts/models/journaling_model/v1
+  opset: 18
+
+evaluation:
+  threshold_file: artifacts/experiments/journaling_model/v1/thresholds.json
+  temperature_file: artifacts/experiments/journaling_model/v1/temperatures.json
