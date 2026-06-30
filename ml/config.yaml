@@ -12,6 +12,7 @@ model:
   labels:
     - angry
     - anxious
+    - bored
     - calm
     - confused
     - excited

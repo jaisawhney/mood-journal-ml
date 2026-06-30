@@ -60,7 +60,9 @@ FastAPI serves the web application and model assets; all inference is executed l
 | Macro ROC AUC | 0.804 |
 | Hamming Loss | 0.176 |
 
-The dataset is highly imbalanced across emotion labels. Despite class rebalancing and hyperparameter optimization, minority classes remain the main source of prediction error.
+The dataset is highly imbalanced across emotion labels. Despite class rebalancing and hyperparameter optimization, minority classes remain the main source of prediction error. 
+
+The underlying classifier predicts a broader set of emotion labels than are exposed in the web app. To improve usability, the web app presents a curated subset of emotions that are most relevant to mood journaling while continuing to predict the full set internally.
 
 ## Datasets
 - Lemotif (Li & Parikh, arXiv 2019): Journaling dataset derived from personal journal entries, used for fine-tuning and evaluation

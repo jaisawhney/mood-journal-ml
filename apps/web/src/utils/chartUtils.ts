@@ -47,37 +47,11 @@ export function chartXAxisTickCallback(this: ChartAxisContext, tickValue: string
 /**
  * Y-axis tick callback to convert numeric values to labels
  * @param tickValue the tick value
- * @param _index the index of the tick
  * @returns string label for the tick
  */
-export function chartYAxisTickCallback(tickValue: any, _index: number) {
-    if (tickValue <= 0) return "Low";
-    if (tickValue < 1) return "Moderate";
+export function chartYAxisTickCallback(tickValue: number | string) {
+    const value = typeof tickValue === "number" ? tickValue : Number(tickValue);
+    if (value <= 0) return "Low";
+    if (value < 1) return "Moderate";
     return "High";
 }
-
-/**
- * Normalize an array of numbers to a given percentile
- * @param values array of numbers (or nulls)
- * @param percentile percentile (default 0.9)
- * @returns array of normalized numbers (or nulls)
- */
-export function normalizeToPercentile(
-    values: (number | null)[],
-    percentile: number = 0.9
-): (number | null)[] {
-    const positiveValues: number[] = values.filter((v): v is number => v !== null && v > 0);
-    if (positiveValues.length === 0) {
-        return values.map(v => v === null ? null : 0);
-    }
-
-    const sorted = positiveValues.slice().sort((a, b) => a - b);
-    const index = Math.floor((sorted.length - 1) * percentile);
-    const cap = sorted[index] ?? 1;
-    return values.map(v => {
-        if (v === null) return null;
-        const normalized = v / cap;
-        return Math.max(0, Math.min(normalized, 1));
-    });
-}
-

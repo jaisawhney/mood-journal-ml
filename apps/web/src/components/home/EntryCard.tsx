@@ -8,7 +8,7 @@ import type { JournalEntry } from "../../storage/JournalDB";
 
 export default function EntryCard({ entry }: { entry: JournalEntry }) {
     const analysis: Analysis = getAnalysis(entry);
-    const emotion: Emotion | null = getPrimaryEmotion(analysis.buckets);
+    const emotion: Emotion | null = getPrimaryEmotion(analysis.probabilities, analysis.predictions);
     return (
         <div className="card p-5 space-y-3">
             <div className="flex items-center justify-between">

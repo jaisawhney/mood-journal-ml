@@ -6,9 +6,8 @@ import { getEmotionColor } from "../../constants/emotionMaps";
 import { formatDate } from "../../utils/date";
 import ArmedButton from "../ui/ArmedButton";
 import { deleteEntry, updateUserOverride } from "../../storage/journalRepository";
-import { getAnalysis, getOverrideBuckets, getPrimaryEmotion } from "../../utils/emotionHelpers";
-import { getDisplayBuckets } from "../../storage/journalRepository";
-import type { Analysis, Emotion } from "../../types/types";
+import { getAnalysis, getDetectedEmotions, getPrimaryEmotion } from "../../utils/emotionHelpers";
+import type { Emotion } from "../../types/types";
 import type { JournalEntry } from "../../storage/JournalDB";
 import { AnimatePresence, LayoutGroup, motion } from "framer-motion";
 import { toast } from "sonner";
@@ -21,17 +20,23 @@ type Props = {
 export default function HistoryCard({ entry }: Props) {
     const [expanded, setExpanded] = useState(false);
     const journalEntryId = entry.id!;
-    const analysis: Analysis = getAnalysis(entry);
-    const displayBuckets = getDisplayBuckets(analysis.buckets);
-    const selectedEmotions = displayBuckets.map(([emotion]) => emotion as Emotion);
-    const primaryEmotion = getPrimaryEmotion(Object.fromEntries(displayBuckets));
+    const analysis = getAnalysis(entry);
+    const detectedEmotions = getDetectedEmotions(
+        analysis.probabilities,
+        analysis.predictions,
+    );
+
+    const selectedEmotions = detectedEmotions.map(e => e.emotion);
+    const primaryEmotion = getPrimaryEmotion(
+        analysis.probabilities,
+        analysis.predictions,
+    );
 
     const { isQueued } = useInferenceQueue(journalEntryId);
 
     async function updateEmotions(emotions: Emotion[]) {
-        const buckets = getOverrideBuckets(entry, emotions);
         try {
-            await updateUserOverride(journalEntryId, { buckets });
+            await updateUserOverride(journalEntryId, { emotions });
         } catch (error) {
             console.error("Failed to update user emotion override for entry", journalEntryId, error);
             toast.error("Failed to update emotions. Please try again.");
@@ -42,7 +47,6 @@ export default function HistoryCard({ entry }: Props) {
         hidden: { opacity: 0, y: 10 },
         visible: { opacity: 1, y: 0 },
     };
-
     return (
         <div className="card p-5 space-y-4">
             <div className="flex items-center justify-between">
@@ -92,15 +96,15 @@ export default function HistoryCard({ entry }: Props) {
                                 </div>
                             )}
                             <div className="rounded-md bg-slate-50 px-3 py-2 text-xs text-slate-600 dark:bg-neutral-900">
-                                <p className="text-slate-400 mb-1">{displayBuckets.length > 0 ? "Used in insights as" : "Not contributing to insights"}</p>
+                                <p className="text-slate-400 mb-1">{detectedEmotions.length > 0 ? "Used in insights as" : "Not contributing to insights"}</p>
                                 <div className="flex flex-wrap gap-2">
                                     <LayoutGroup id={journalEntryId.toString()}>
                                         <motion.ul className="contents" >
                                             <AnimatePresence initial={false}>
-                                                {displayBuckets.map(([emotion], idx) => (
+                                                {detectedEmotions.map(({ emotion }, idx) => (
                                                     <motion.li
                                                         key={emotion}
-                                                        layoutDependency={displayBuckets.length}
+                                                        layoutDependency={detectedEmotions.length}
                                                         className="inline-block mr-2 mb-2"
                                                         layout
                                                         variants={itemVariants}
@@ -116,7 +120,8 @@ export default function HistoryCard({ entry }: Props) {
                                                             )}
                                                         >
                                                             <EmotionIcon emotion={emotion as Emotion} size={12} />
-                                                            {emotion}
+                                                            <span className="capitalize">{emotion}</span>
+
                                                             <span className="opacity-70">
                                                                 #{idx + 1}
                                                             </span>

@@ -2,11 +2,12 @@ import Dexie, { type Table } from 'dexie';
 import type { Emotion } from '../types/types';
 
 export type Analysis = {
-    buckets: Record<Emotion, number>;
+    probabilities: Record<Emotion, number>;
+    predictions: Record<Emotion, boolean>;
 };
 
 export type UserOverride = {
-    buckets?: Partial<Record<Emotion, number>>;
+    emotions?: Emotion[];
     note?: string;
     updatedAt: number;
 };

@@ -1,6 +1,4 @@
-import type { Emotion, RawEmotionResult } from "../types/types";
-import { buildEmotionBuckets } from "../utils/emotionHelpers";
-import { MAX_BUCKETS } from "../constants/chartConstants";
+import { EMPTY_PREDICTIONS, EMPTY_PROBABILITIES, type RawEmotionResult } from "../types/types";
 import { db } from "./JournalDB";
 import type { JournalEntry, UserOverride } from "./JournalDB";
 
@@ -12,16 +10,7 @@ export async function createJournalEntry(
     text: string,
 ): Promise<number> {
     const now = Date.now();
-    const emptyBuckets: Record<Emotion, number> = {
-        Joy: 0,
-        Sadness: 0,
-        Anger: 0,
-        Fear: 0,
-        Trust: 0,
-        Disgust: 0,
-        Surprise: 0,
-        Anticipation: 0,
-    };
+
     return db.entries.add({
         text,
         raw: {
@@ -29,20 +18,23 @@ export async function createJournalEntry(
             modelVersion: "",
         },
         analysis: {
-            buckets: emptyBuckets,
+            probabilities: EMPTY_PROBABILITIES,
+            predictions: EMPTY_PREDICTIONS,
         },
         createdAt: now,
         updatedAt: now,
     });
 }
 
+
 /** Update user override for a journal entry
  * @param id journal entry ID
  * @param override partial UserOverride object
  */
-export async function updateUserOverride(id: number, override: Partial<UserOverride>) {
-    const updatedAt = Date.now();
-
+export async function updateUserOverride(
+    id: number,
+    override: Partial<UserOverride>,
+) {
     const entry = await db.entries.get(id);
     if (!entry) return;
 
@@ -50,9 +42,9 @@ export async function updateUserOverride(id: number, override: Partial<UserOverr
         userOverride: {
             ...entry.userOverride,
             ...override,
-            updatedAt,
+            updatedAt: Date.now(),
         },
-        updatedAt,
+        updatedAt: Date.now(),
     });
 }
 
@@ -60,16 +52,12 @@ export async function updateUserOverride(id: number, override: Partial<UserOverr
  * @param id journal entry ID
  * @param result RawEmotionResult
  */
-export async function patchJournalEntryWithResult(id: number, result: RawEmotionResult) {
+export async function patchJournalEntryWithResult(
+    id: number,
+    result: RawEmotionResult,
+) {
     const entry = await db.entries.get(id);
     if (!entry) return;
-
-    const buckets = Object.fromEntries(
-        buildEmotionBuckets(result.probabilities)
-            .map(emotionBucket => [emotionBucket.bucket as Emotion, emotionBucket.dominance])
-    );
-
-    const updatedAt = Date.now();
 
     return db.entries.update(id, {
         raw: {
@@ -77,9 +65,10 @@ export async function patchJournalEntryWithResult(id: number, result: RawEmotion
             modelVersion: "emotion-v1",
         },
         analysis: {
-            buckets: buckets as Record<Emotion, number>,
+            probabilities: result.probabilities,
+            predictions: result.predictions,
         },
-        updatedAt,
+        updatedAt: Date.now(),
     });
 }
 
@@ -87,9 +76,9 @@ export async function patchJournalEntryWithResult(id: number, result: RawEmotion
  * @param entries array of journal entries
  */
 export async function replaceAllEntries(entries: JournalEntry[]) {
-    if (!Array.isArray(entries) || entries.length === 0) return;
+    if (!entries.length) return;
 
-    const toInsert = entries.map(({ id, ...rest }) => rest);
+    const toInsert = entries.map(({ ...rest }) => rest);
 
     await db.transaction("rw", db.entries, async () => {
         await db.entries.clear();
@@ -103,17 +92,4 @@ export async function deleteEntry(id: number) {
 
 export async function clearAllEntries() {
     return db.entries.clear();
-}
-
-/**
- * Get display-ready buckets sorted by dominance
- * @param buckets record of emotion buckets
- * @returns array of [Emotion, number] tuples
- */
-export function getDisplayBuckets(buckets: Record<Emotion, number>) {
-    if (Object.values(buckets).every(v => v === 0)) return [];
-
-    return Object.entries(buckets)
-        .sort((a, b) => b[1] - a[1])
-        .slice(0, MAX_BUCKETS);
 }

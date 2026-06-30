@@ -1,5 +1,6 @@
 /// <reference lib='webworker' />
 
+import type { ManifestEntry } from "workbox-build";
 import { NavigationRoute, registerRoute } from 'workbox-routing';
 import { CacheFirst } from 'workbox-strategies';
 import { createHandlerBoundToURL, precacheAndRoute } from 'workbox-precaching';
@@ -7,7 +8,7 @@ import { ExpirationPlugin } from "workbox-expiration";
 
 const EMOTION_MODEL_CACHE = "emotion-model-v1";
 
-declare const self: ServiceWorkerGlobalScope & { __WB_MANIFEST: any };
+declare const self: ServiceWorkerGlobalScope & { __WB_MANIFEST: ManifestEntry[] };
 precacheAndRoute(self.__WB_MANIFEST);
 
 const handler = createHandlerBoundToURL('/index.html');

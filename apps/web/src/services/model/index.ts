@@ -7,7 +7,6 @@ env.allowRemoteModels = false;
 const API_PATH = "/api/models/journaling_model/v1/";
 const TAU = 1.0;
 
-// TODO: use the api to fetch these calibration values from the server rather than hardcoding them here.
 function segmentSentences(text: string): string[] {
     // Use Intl.Segmenter to split text into sentences
     const segmenter = new Intl.Segmenter("en", { granularity: "sentence" });

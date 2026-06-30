@@ -2,24 +2,24 @@ import { useMemo, useState } from "react";
 import PageHeader from "../components/ui/PageHeader";
 import { Doughnut, Line } from "react-chartjs-2";
 import { Chart, ArcElement, Tooltip, Legend, CategoryScale, LinearScale, PointElement, LineElement, Filler, type TooltipItem } from "chart.js";
-import type { Emotion } from "../types/types";
 import { useJournalEntriesForDays } from "../hooks/useJournalEntries";
 import { EMOTION_RGB_MAP, EMOTIONS } from "../constants/emotionMaps";
 import { chartXAxisTickCallback, chartYAxisTickCallback } from "../utils/chartUtils";
 import { useInsightStats } from "../hooks/useInsightStats";
 import DateRangeSelect from "../components/ui/DateRangeSelect";
 import { DATE_RANGES } from "../constants/chartConstants";
+import type { Emotion } from "../types/types";
 
 Chart.register(ArcElement, Tooltip, Legend, CategoryScale, LinearScale, PointElement, LineElement, Filler);
 
 export default function InsightsPage() {
-    const [selectedEmotion, setSelectedEmotion] = useState<Emotion>("Joy");
+    const [selectedEmotion, setSelectedEmotion] = useState<Emotion>("Happy");
     const [range, setRange] = useState(DATE_RANGES[1]);
 
     const { entries } = useJournalEntriesForDays(range.days);
-    const { labels, series, percentages, dominantEmotion, activeDays, totalEntries } = useInsightStats(entries, range.days);
+    const { labels, series, probabilityDistribution, dominantEmotion, activeDays, totalEntries } = useInsightStats(entries, range.days);
 
-    const isEmpty = activeDays === 0 || Object.values(percentages).every(p => p === 0);
+    const isEmpty = activeDays === 0 || Object.values(probabilityDistribution).every(p => p === 0);
     const doughnutData = useMemo(() => (isEmpty ? {
         labels: ["No data"],
         datasets: [{
@@ -31,14 +31,14 @@ export default function InsightsPage() {
     } : {
         labels: EMOTIONS,
         datasets: [{
-            data: EMOTIONS.map(emotion => percentages[emotion]),
+            data: EMOTIONS.map(emotion => probabilityDistribution[emotion]),
             backgroundColor: EMOTIONS.map(
                 emotion => `rgba(${EMOTION_RGB_MAP[emotion]})`
             ),
             borderWidth: 0,
             hoverOffset: 0,
         }],
-    }), [isEmpty, percentages]);
+    }), [isEmpty, probabilityDistribution]);
 
     const doughnutOptions = {
         responsive: true,
@@ -55,7 +55,7 @@ export default function InsightsPage() {
                             return "";
                         }
                         const emotion = EMOTIONS[index] as Emotion;
-                        const value = percentages[emotion] ?? 0;
+                        const value = probabilityDistribution[emotion] ?? 0;
                         return `${emotion}: ${(value * 100).toFixed(0)}%`;
                     },
                 },
@@ -93,11 +93,11 @@ export default function InsightsPage() {
             y: {
                 grid: { color: "rgba(15,23,42,0.04)" },
                 ticks: {
-                    stepSize: 0.625,
+                    stepSize: 0.25,
                     callback: chartYAxisTickCallback,
                 },
                 min: 0,
-                max: 1.25,
+                max: 1,
             },
         },
     };
@@ -125,7 +125,7 @@ export default function InsightsPage() {
                         </p>
                         <p className="text-xs text-slate-400 mt-1">
                             {dominantEmotion
-                                ? `${Math.round((percentages[dominantEmotion] ?? 0) * 100)}% of signal`
+                                ? `${Math.round((probabilityDistribution[dominantEmotion] ?? 0) * 100)}% of signal`
                                 : "—"
                             }
                         </p>
@@ -137,7 +137,7 @@ export default function InsightsPage() {
                             {activeDays} / {labels.length} days
                         </p>
                         <p className="text-xs text-slate-400 mt-1">
-                            Days with emotional signal
+                            Active journaling days
                         </p>
                     </div>
 
@@ -175,7 +175,7 @@ export default function InsightsPage() {
                     <div className="h-[180px]">
                         <Line data={lineData} options={lineOptions} />
                     </div>
-                    <p className="text-secondary">Relative signal of <strong>{selectedEmotion.toLowerCase()}</strong> over time.</p>
+                    <p className="text-secondary">Estimated probability of <strong>{selectedEmotion.toLowerCase()}</strong> across journal entries over time.</p>
                 </section>
             </div>
         </div>

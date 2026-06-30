@@ -4,10 +4,14 @@ import { EmptyStateCard } from "../components/ui/EmptyStateCard";
 import { useJournalEntriesForDays } from "../hooks/useJournalEntries";
 import { List, useDynamicRowHeight, type RowComponentProps, } from "react-window";
 import type { JournalEntry } from "../storage/JournalDB";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { DATE_RANGES } from "../constants/chartConstants";
 import DateRangeSelect from "../components/ui/DateRangeSelect";
 import { AnimatePresence, motion } from "framer-motion";
+import EmotionSelect from "../components/ui/EmotionSelect";
+import SearchInput from "../components/ui/SearchInput";
+import type { Emotion } from "../types/types";
+import { getAnalysis } from "../utils/emotionHelpers";
 
 
 function Row({ index, style, entries, }: RowComponentProps<{ entries: JournalEntry[] }>) {
@@ -21,17 +25,36 @@ function Row({ index, style, entries, }: RowComponentProps<{ entries: JournalEnt
 }
 
 export default function JournalHistoryPage() {
-    const [range, setRange] = useState(DATE_RANGES[1]);
-    const { entries, loading } = useJournalEntriesForDays(range.days);
+    const [dateRange, setDateRange] = useState(DATE_RANGES[1]);
+    const [emotionFilter, setEmotionFilter] = useState<Emotion | "All">("All");
+    const [search, setSearch] = useState("");
+
+    const { entries, loading } = useJournalEntriesForDays(dateRange.days);
 
     const rowHeight = useDynamicRowHeight({
         defaultRowHeight: 750
     });
 
-    const handleRangeChange = (label: string) => {
+    const handleDateRangeChange = (label: string) => {
         const selectedRange = DATE_RANGES.find(r => r.label === label);
-        if (selectedRange) setRange(selectedRange);
+        if (selectedRange) setDateRange(selectedRange);
     }
+
+    const filteredEntries = useMemo(() => {
+        return entries.filter(entry => {
+            const analysis = getAnalysis(entry);
+
+            const matchesEmotion =
+                emotionFilter === "All" ||
+                analysis.predictions[emotionFilter];
+
+            const matchesSearch =
+                search.trim() === "" ||
+                entry.text.toLowerCase().includes(search.toLowerCase());
+
+            return matchesEmotion && matchesSearch;
+        });
+    }, [entries, emotionFilter, search]);
 
     return (
         <div className="page-container">
@@ -41,13 +64,23 @@ export default function JournalHistoryPage() {
                     description="Review past entries and reflect more deeply when you want."
                 />
 
-                <DateRangeSelect
-                    value={range.label}
-                    ranges={DATE_RANGES}
-                    onChange={handleRangeChange}
-                />
+                <div className="flex gap-3">
+                    <DateRangeSelect
+                        value={dateRange.label}
+                        ranges={DATE_RANGES}
+                        onChange={handleDateRangeChange}
+                    />
+                    <EmotionSelect
+                        value={emotionFilter}
+                        onChange={setEmotionFilter}
+                    />
+                    <SearchInput
+                        value={search}
+                        onChange={setSearch}
+                    />
+                </div>
 
-                {!loading && entries.length !== 0 ? (
+                {!loading && filteredEntries.length !== 0 ? (
                     <section className="space-y-4">
                         <div className="px-1">
                             <h2 className="header">All entries</h2>
@@ -55,7 +88,7 @@ export default function JournalHistoryPage() {
 
                         <AnimatePresence initial={false} mode="wait">
                             <motion.div
-                                key={range.label}
+                                key={dateRange.label}
                                 initial={{ opacity: 0, y: -5 }}
                                 animate={{ opacity: 1, y: 0 }}
                                 exit={{ opacity: 0, y: 5 }}
@@ -65,9 +98,9 @@ export default function JournalHistoryPage() {
                                 <List
                                     role="list"
                                     rowComponent={Row}
-                                    rowCount={entries.length}
+                                    rowCount={filteredEntries.length}
                                     rowHeight={rowHeight}
-                                    rowProps={{ entries }}
+                                    rowProps={{ entries: filteredEntries }}
                                 />
                             </motion.div>
                         </AnimatePresence>

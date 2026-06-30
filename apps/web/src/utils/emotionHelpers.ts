@@ -1,62 +1,41 @@
+import { EMOTIONS } from "../constants/emotionMaps";
 import type { JournalEntry } from "../storage/JournalDB";
-import type { Analysis, Emotion } from "../types/types";
+import { EMPTY_PREDICTIONS, EMPTY_PROBABILITIES, type Analysis, type Emotion, type EmotionResult } from "../types/types";
 
-const EMOTION_MAP: Record<string, string[]> = {
-    "Joy": ["happy", "satisfied", "proud", "excited"],
-    "Fear": ["anxious"],
-    "Surprise": ["surprised"],
-    "Sadness": ["sad", "nostalgic"],
-    "Anger": ["angry", "frustrated"],
-};
-
-const OVERRIDE_LINEAR_DROP = 0.2;
-
-export type BucketResult = {
-    bucket: string;
-    dominance: number;
-};
-
-//TODO: All of this needs to be refactored to use the new emotion model output format, which is a probabilities object instead of an emotions object.
 
 /**
- * Build emotion buckets from raw emotions
- * @param emotions the raw emotions
+ * Get the detected emotions from the raw emotion analysis result
+ * @param probabilities the raw emotion probabilities
+ * @param predictions the raw emotion predictions
  * @param topN number of top buckets to return
- * @returns array of BucketResult
+ * @returns array of EmotionResult
  */
-export function buildEmotionBuckets(
-    emotions: Record<string, number>,
-    topN: number = 3
-): BucketResult[] {
-    // Build raw scores for each parent emotion bucket
-    const rawScores: { bucket: string; dominance: number }[] = [];
-    for (const [parent, subEmotions] of Object.entries(EMOTION_MAP)) {
-        let bucketScore = 0;
-        for (const subEmotion of subEmotions) {
-            const emotionValue = emotions[subEmotion] || 0;
-            bucketScore = Math.max(bucketScore, emotionValue);
-        }
-        if (bucketScore > 0) {
-            rawScores.push({ bucket: parent, dominance: bucketScore });
-        }
-    }
-
-    if (rawScores.length === 0) return [];
-    rawScores.sort((a, b) => b.dominance - a.dominance);
-    return rawScores.slice(0, topN); // Return top N buckets
+export function getDetectedEmotions(
+    probabilities: Record<Emotion, number>,
+    predictions: Record<Emotion, boolean>,
+    topN = 3,
+): EmotionResult[] {
+    return EMOTIONS
+        .filter(emotion => predictions[emotion])
+        .map(emotion => ({
+            emotion,
+            probability: probabilities[emotion] ?? 0,
+        }))
+        .sort((a, b) => b.probability - a.probability)
+        .slice(0, topN);
 }
 
 /**
- * Get the primary emotion from given buckets
- * @param buckets emotion buckets
+ * Get the primary emotion from the raw emotion analysis result
+ * @param probabilities the raw emotion probabilities
+ * @param predictions the raw emotion predictions
  * @returns the primary Emotion or null
  */
 export function getPrimaryEmotion(
-    buckets: Partial<Record<Emotion, number>>
+    probabilities: Record<Emotion, number>,
+    predictions: Record<Emotion, boolean>,
 ): Emotion | null {
-    const entries = Object.entries(buckets) as [Emotion, number][];
-    if (entries.length === 0) return null;
-    return entries.reduce((best, curr) => curr[1] > best[1] ? curr : best)[0];
+    return getDetectedEmotions(probabilities, predictions, 1)[0]?.emotion ?? null;
 }
 
 /**
@@ -65,43 +44,35 @@ export function getPrimaryEmotion(
  * @returns the analysis
  */
 export function getAnalysis(entry: JournalEntry): Analysis {
-    const override = entry?.userOverride ?? null;
-    if (!entry.analysis) return {
-        buckets: {
-            Joy: 0,
-            Sadness: 0,
-            Anger: 0,
-            Fear: 0,
-            Trust: 0,
-            Disgust: 0,
-            Surprise: 0,
-            Anticipation: 0,
-        },
-        isOverridden: false
-    };
+    if (!entry.analysis) {
+        return {
+            probabilities: EMPTY_PROBABILITIES,
+            predictions: EMPTY_PREDICTIONS,
+            isOverridden: false,
+        };
+    }
+
+    const override = entry.userOverride;
+    if (!override?.emotions) {
+        return {
+            ...entry.analysis,
+            isOverridden: false,
+        };
+    }
+
+    const probabilities = {} as Record<Emotion, number>;
+    const predictions = {} as Record<Emotion, boolean>;
+
+    for (const emotion of EMOTIONS) {
+        const selected = override.emotions.includes(emotion);
+
+        probabilities[emotion] = selected ? 1 : 0;
+        predictions[emotion] = selected;
+    }
 
     return {
-        // @ts-expect-error: override should completely replace analysis buckets if present
-        buckets: {
-            ...(override?.buckets ?? entry.analysis.buckets),
-        },
-        isOverridden: Boolean(override),
+        probabilities,
+        predictions,
+        isOverridden: true,
     };
-}
-
-/**
- * Get the override buckets for a journal entry
- * @param entry the journal entry
- * @param emotions ordered list of emotions from most to least dominant
- * @returns partial record of Emotion to number
- */
-export function getOverrideBuckets(_entry: JournalEntry, emotions: Emotion[]): Partial<Record<Emotion, number>> {
-    const buckets: Partial<Record<Emotion, number>> = {};
-
-    emotions.forEach((emotion, idx) => {
-        const weight = Math.max(1 - OVERRIDE_LINEAR_DROP * idx, 0);
-        buckets[emotion] = weight;
-    });
-
-    return buckets;
 }

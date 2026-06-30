@@ -17,10 +17,8 @@ export function useInferenceQueue(entryId?: number) {
         () => checkIfEntryIsQueued(entryId),
         [entryId],
     );
-
     return {
         isQueued: isQueued ?? false,
-        // TODO: move to utils file maybe
         analyze: async (id?: number): Promise<boolean> => {
             try {
                 const effectiveEntryId = id ?? entryId;

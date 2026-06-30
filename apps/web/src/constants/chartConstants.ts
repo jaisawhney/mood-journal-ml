@@ -1,4 +1,3 @@
-export const MAX_BUCKETS = 5;
 export const DATE_RANGES = [
     { label: "7d", days: 7 },
     { label: "14d", days: 14 },
