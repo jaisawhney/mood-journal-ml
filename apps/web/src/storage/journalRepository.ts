@@ -62,7 +62,7 @@ export async function patchJournalEntryWithResult(
     return db.entries.update(id, {
         raw: {
             emotions: result.probabilities,
-            modelVersion: "emotion-v1",
+            modelVersion: "journaling-v1",
         },
         analysis: {
             probabilities: result.probabilities,

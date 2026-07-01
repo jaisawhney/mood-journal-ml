@@ -6,7 +6,7 @@ import { CacheFirst } from 'workbox-strategies';
 import { createHandlerBoundToURL, precacheAndRoute } from 'workbox-precaching';
 import { ExpirationPlugin } from "workbox-expiration";
 
-const EMOTION_MODEL_CACHE = "emotion-model-v1";
+const EMOTION_MODEL_CACHE = "journaling_model-v1";
 
 declare const self: ServiceWorkerGlobalScope & { __WB_MANIFEST: ManifestEntry[] };
 precacheAndRoute(self.__WB_MANIFEST);
@@ -54,12 +54,12 @@ self.addEventListener('install', (event) => {
     event.waitUntil(
         caches.open(EMOTION_MODEL_CACHE).then(cache =>
             cache.addAll([
-                "/api/models/emotion-model/v1/onnx/model_quantized.onnx",
-                "/api/models/emotion-model/v1/tokenizer.json",
-                "/api/models/emotion-model/v1/tokenizer_config.json",
-                "/api/models/emotion-model/v1/special_tokens_map.json",
-                "/api/models/emotion-model/v1/config.json",
-                "/api/models/emotion-model/v1/ort_config.json",
+                "/api/models/journaling_model/v1/onnx/model_quantized.onnx",
+                "/api/models/journaling_model/v1/tokenizer.json",
+                "/api/models/journaling_model/v1/tokenizer_config.json",
+                "/api/models/journaling_model/v1/special_tokens_map.json",
+                "/api/models/journaling_model/v1/config.json",
+                "/api/models/journaling_model/v1/ort_config.json",
             ])
         ).catch((error) => {
             console.error("Failed to cache model files during activation:", error);
