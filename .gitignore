@@ -1,8 +1,4 @@
 artifacts
-optuna.db
-optuna.db-shm
-optuna.db-wal
-
 scripts/
 
 # Byte-compiled / optimized / DLL files
