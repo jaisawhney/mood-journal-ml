@@ -13,7 +13,7 @@ import type { Emotion } from "../types/types";
 Chart.register(ArcElement, Tooltip, Legend, CategoryScale, LinearScale, PointElement, LineElement, Filler);
 
 export default function InsightsPage() {
-    const [selectedEmotion, setSelectedEmotion] = useState<Emotion>("Happy");
+    const [selectedEmotion, setSelectedEmotion] = useState<Emotion>("happy");
     const [range, setRange] = useState(DATE_RANGES[1]);
 
     const { entries } = useJournalEntriesForDays(range.days);
@@ -29,7 +29,7 @@ export default function InsightsPage() {
             hoverOffset: 0,
         }],
     } : {
-        labels: EMOTIONS,
+        labels: EMOTIONS.map(emotion => emotion.charAt(0).toUpperCase() + emotion.slice(1)),
         datasets: [{
             data: EMOTIONS.map(emotion => probabilityDistribution[emotion]),
             backgroundColor: EMOTIONS.map(
@@ -54,9 +54,9 @@ export default function InsightsPage() {
                         if (index == null || index < 0 || index >= EMOTIONS.length) {
                             return "";
                         }
-                        const emotion = EMOTIONS[index] as Emotion;
+                        let emotion = EMOTIONS[index] as Emotion;
                         const value = probabilityDistribution[emotion] ?? 0;
-                        return `${emotion}: ${(value * 100).toFixed(0)}%`;
+                        return `${(value * 100).toFixed(0)}%`;
                     },
                 },
             },
@@ -120,7 +120,7 @@ export default function InsightsPage() {
                 >
                     <div className="card p-4">
                         <p className="text-sm text-slate-500">Dominant emotion</p>
-                        <p className="text-lg font-medium mt-1">
+                        <p className="text-lg font-medium mt-1 capitalize">
                             {dominantEmotion ?? "—"}
                         </p>
                         <p className="text-xs text-slate-400 mt-1">
@@ -168,7 +168,7 @@ export default function InsightsPage() {
                 <section className="card p-6 space-y-4">
                     <div className="flex items-center justify-between">
                         <h2 className="header">Emotion over time</h2>
-                        <select aria-label="Select emotion" value={selectedEmotion} onChange={e => setSelectedEmotion(e.target.value as Emotion)} className="select-input">
+                        <select aria-label="Select emotion" value={selectedEmotion} onChange={e => setSelectedEmotion(e.target.value as Emotion)} className="capitalize select-input">
                             {EMOTIONS.map(emotion => (<option key={emotion} value={emotion}>{emotion}</option>))}
                         </select>
                     </div>
