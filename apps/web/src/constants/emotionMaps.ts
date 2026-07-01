@@ -28,7 +28,7 @@ export const EMOTION_COLORS_MAP: Record<Emotion, string> = {
     frustrated: "bg-rose-100 text-rose-700",
     excited: "bg-orange-100 text-orange-700",
     satisfied: "bg-teal-100 text-teal-700",
-    sad: "bg-slate-100 text-slate-700",
+    sad: "bg-blue-100 text-blue-700",
 };
 
 export const EMOTION_RGB_MAP: Record<Emotion, string> = {
@@ -38,7 +38,7 @@ export const EMOTION_RGB_MAP: Record<Emotion, string> = {
     frustrated: "253,164,175", // rose-300
     excited: "253,186,116",    // orange-300
     satisfied: "94,234,212",   // teal-300
-    sad: "203,213,225",        // slate-300
+    sad: "142,197,255",        // blue-300
 };
 
 /**

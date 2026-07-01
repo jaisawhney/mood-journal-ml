@@ -64,7 +64,7 @@ export default function JournalHistoryPage() {
                     description="Review past entries and reflect more deeply when you want."
                 />
 
-                <div className="flex gap-3">
+                <div className="flex flex-col gap-3 sm:flex-row">
                     <DateRangeSelect
                         value={dateRange.label}
                         ranges={DATE_RANGES}
